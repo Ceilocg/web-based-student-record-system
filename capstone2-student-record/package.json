@@ -7,9 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-  "postinstall": "echo 'Skipping canvas installation on Vercel' && exit 0"
-
+    "preview": "vite preview"
+  },
+  "optionalDependencies": {
+    "canvas": "^2.11.2"
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
@@ -25,10 +26,6 @@
     "admin-lte": "^4.0.0-beta2",
     "ajv-formats": "^3.0.1",
     "axios": "^1.7.7",
-<<<<<<< HEAD
-=======
-    "canvas": "^2.9.3",
->>>>>>> 14e3de289a6916044333fea84f0b2312d5084fa7
     "chart.js": "^4.4.6",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -80,18 +77,6 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
-  },
-  "main": "index.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Ceilocg/School-Management.git"
-  },
-  "author": "Ceilocg <ceilofurogabotero@gmai.com>",
-  "license": "MIT",
-  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
-  "bugs": {
-    "url": "https://github.com/Ceilocg/School-Management/issues"
-  },
-  "homepage": "https://github.com/Ceilocg/School-Management#readme",
-  "keywords": []
+  }
 }
+

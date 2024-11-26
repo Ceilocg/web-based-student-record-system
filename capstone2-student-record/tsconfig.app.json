@@ -5,10 +5,8 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
-<<<<<<< HEAD
     "sourceMap": true,
-=======
->>>>>>> 14e3de289a6916044333fea84f0b2312d5084fa7
+
 
     /* Bundler mode */
     "moduleResolution": "bundler",
