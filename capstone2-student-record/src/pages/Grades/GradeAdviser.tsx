@@ -3,7 +3,6 @@ import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp
 import { db, auth } from '../../firebaseConfig'
 import { Search } from 'lucide-react'
 
-
 interface Student {
   id: string
   fullName: string
@@ -42,10 +41,9 @@ interface GradeData {
   gradeLevel: string;
   schoolYear: string;
   learningAreas: LearningArea[];
-  generalAverage: number; // Added to reflect general average in the schema
+  generalAverage: number;
   timestamp: ReturnType<typeof serverTimestamp>;
 }
-
 
 export default function GradeAdviser() {
   const [learningAreas, setLearningAreas] = useState<string[]>([])
@@ -64,9 +62,10 @@ export default function GradeAdviser() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [studentAverages, setStudentAverages] = useState<{ [studentId: string]: number }>({});
 
+  const isGrade11or12 = (grade: string) => {
+    return grade === "11" || grade === "12";
+  };
 
-
-  // Fetch grades and general averages
   const fetchGrades = async () => {
     try {
       const gradesQuery = query(collection(db, "grades"));
@@ -78,18 +77,15 @@ export default function GradeAdviser() {
         averages[gradeData.studentId] = gradeData.generalAverage;
       });
   
-      setStudentAverages(averages); // Use the new state
+      setStudentAverages(averages);
     } catch (err) {
       console.error("Error fetching grades:", err);
     }
   };
-  
 
-// Call this in useEffect or wherever you fetch data
-useEffect(() => {
-  fetchGrades();
-}, []);
-
+  useEffect(() => {
+    fetchGrades();
+  }, []);
 
   const fetchSubjects = async (sectionId: string) => {
     try {
@@ -126,22 +122,25 @@ useEffect(() => {
   }
 
   const calculateGeneralAverage = () => {
-    const finalGrades = learningAreas.map((area) =>
-      area === "MAPEH"
-        ? calculateFinalGrade(grades["MAPEH"] || [])
-        : calculateFinalGrade(grades[area] || [])
-    );
+    const finalGrades = learningAreas.map((area) => {
+      if (isGrade11or12(sections.find(s => s.id === selectedSectionId)?.grade || '')) {
+        return calculateFinalGrade([grades[area]?.[0] || 0, grades[area]?.[1] || 0]) || 0;
+      } else {
+        return area === "MAPEH"
+          ? calculateFinalGrade(grades["MAPEH"] || [])
+          : calculateFinalGrade(grades[area] || []);
+      }
+    });
     const validGrades = finalGrades.filter((grade): grade is number => grade !== null);
     if (validGrades.length === 0) return "-";
     const average = validGrades.reduce((acc, grade) => acc + grade, 0) / validGrades.length;
     return Math.round(average);
   };
-  
 
   const handleGradeChange = (area: string, quarter: number, value: string) => {
     const newGrades = { ...grades }
     const updatedQuarters = newGrades[area] || []
-    updatedQuarters[quarter] = parseFloat(value) || 0 // Ensure input is a number
+    updatedQuarters[quarter] = parseFloat(value) || 0
     newGrades[area] = updatedQuarters
     setGrades(newGrades)
 
@@ -149,7 +148,7 @@ useEffect(() => {
       setGrades((prevGrades) => {
         const newMAPEHGrades = [0, 1, 2, 3].map((q) => {
           const grade = calculateMAPEHGrade(q)
-          return grade !== null ? grade : 0 // Default to 0 if grade is null
+          return grade !== null ? grade : 0
         })
         return {
           ...prevGrades,
@@ -257,7 +256,6 @@ useEffect(() => {
     setSelectedStudent(student)
     setIsSearching(false)
     setSearchTerm(student.fullName)
-    // Here you would typically load the selected student's grades
     console.log(`Selected student with ID: ${student.id}`)
   }
 
@@ -275,7 +273,6 @@ useEffect(() => {
       return;
     }
   
-    // Check for existing grades
     try {
       const gradesQuery = query(
         collection(db, 'grades'),
@@ -290,20 +287,26 @@ useEffect(() => {
         return;
       }
   
-      // Calculate general average before saving
       const generalAverage = calculateGeneralAverage();
 
-  
-      // Proceed to save grades
       const learningAreasData: LearningArea[] = learningAreas.map(area => ({
         name: area,
-        quarters: {
-          1: grades[area]?.[0] || 0,
-          2: grades[area]?.[1] || 0,
-          3: grades[area]?.[2] || 0,
-          4: grades[area]?.[3] || 0,
-        },
-        finalGrade: calculateFinalGrade(grades[area] || []) || 0,
+        quarters: isGrade11or12(section.grade)
+          ? {
+              1: grades[area]?.[0] || 0,
+              2: grades[area]?.[1] || 0,
+              3: 0,
+              4: 0,
+            }
+          : {
+              1: grades[area]?.[0] || 0,
+              2: grades[area]?.[1] || 0,
+              3: grades[area]?.[2] || 0,
+              4: grades[area]?.[3] || 0,
+            },
+        finalGrade: isGrade11or12(section.grade)
+          ? calculateFinalGrade([grades[area]?.[0] || 0, grades[area]?.[1] || 0]) || 0
+          : calculateFinalGrade(grades[area] || []) || 0,
       }));
   
       const gradeData: GradeData = {
@@ -316,7 +319,7 @@ useEffect(() => {
         gradeLevel: section.grade,
         schoolYear: new Date().getFullYear().toString(),
         learningAreas: learningAreasData,
-        generalAverage: generalAverage === "-" ? 0 : generalAverage, // Save the general average
+        generalAverage: generalAverage === "-" ? 0 : Number(generalAverage),
         timestamp: serverTimestamp(),
       };
   
@@ -325,7 +328,6 @@ useEffect(() => {
       setSuccessMessage("Grades saved successfully!");
       setTimeout(() => setSuccessMessage(null), 3000);
   
-      // Reset input fields and states
       setGrades({});
       setSelectedStudent(null);
       setSearchTerm('');
@@ -336,7 +338,6 @@ useEffect(() => {
       setTimeout(() => setErrorMessage(null), 3000);
     }
   };
-  
 
   useEffect(() => {
     fetchSectionsForAdviser()
@@ -370,7 +371,6 @@ useEffect(() => {
     );
   }
 
-  // Render error message
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900">
@@ -378,6 +378,37 @@ useEffect(() => {
       </div>
     );
   }
+
+  const categorizeSubject = (subject: string): string => {
+    const coreSubjects = [
+      "Oral Communication",
+      "Reading and Writing",
+      "Komunikasyon at Pananaliksik sa Wika at Kulturang Pilipino",
+      "Pagbasa at Pagsusuri ng Iba't Ibang Teksto Tungo sa Pananaliksik",
+      "General Mathematics",
+      "Statistics and Probability",
+      "Earth and Life Science",
+      "Physical Science",
+      "Understanding Culture, Society, and Politics",
+      "Introduction to the Philosophy of the Human Person",
+      "21st Century Literature from the Philippines and the World",
+      "Contemporary Philippine Arts from the Regions",
+      "Physical Education and Health (PEH)"
+    ];
+
+    const appliedSubjects = [
+      "Empowerment Technologies (E-Tech)",
+      "English for Academic and Professional Purposes",
+      "Practical Research 1",
+      "Practical Research 2",
+      "Filipino sa Piling Larangan",
+      "Entrepreneurship"
+    ];
+
+    if (coreSubjects.includes(subject)) return "CORE";
+    if (appliedSubjects.includes(subject)) return "APPLIED";
+    return "SPECIALIZED";
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -447,110 +478,172 @@ useEffect(() => {
             </div>
   
             <div className="flex justify-between gap-4">
-              {/* REPORT ON LEARNING PROGRESS AND ACHIEVEMENT */}
+              {isGrade11or12(section.grade) ? (
+                <div className="w-full p-6 border rounded shadow">
+                  <h2 className="text-lg font-bold mb-4">
+                    REPORT ON LEARNING PROGRESS AND ACHIEVEMENT
+                  </h2>
+                  <table className="w-full border-collapse border border-gray-200">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-200 p-2">Subject Category</th>
+                        <th className="border border-gray-200 p-2">SUBJECTS</th>
+                        <th colSpan={2} className="border border-gray-200 p-2 text-center">Quarter</th>
+                        <th className="border border-gray-200 p-2 text-center">SEM FINAL GRADE</th>
+                        <th className="border border-gray-200 p-2 text-center">ACTION TAKEN</th>
+                      </tr>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-200 p-2"></th>
+                        <th className="border border-gray-200 p-2"></th>
+                        <th className="border border-gray-200 p-2 text-center">1ST</th>
+                        <th className="border border-gray-200 p-2 text-center">2ND</th>
+                        <th className="border border-gray-200 p-2"></th>
+                        <th className="border border-gray-200 p-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {learningAreas.map((area) => (
+                        <tr key={area}>
+                          <td className="border border-gray-200 p-2 text-center">{categorizeSubject(area)}</td>
+                          <td className="border border-gray-200 p-2">{area}</td>
+                          {[0, 1].map((quarter) => (
+                            <td key={quarter} className="border border-gray-200 p-2 text-center">
+                              <input
+                                type="number"
+                                className="w-full text-center"
+                                min="0"
+                                max="100"
+                                value={grades[area]?.[quarter] || ""}
+                                onChange={(e) => handleGradeChange(area, quarter, e.target.value)}
+                                required
+                              />
+                            </td>
+                          ))}
+                          <td className="border border-gray-200 p-2 text-center">
+                            {calculateFinalGrade([grades[area]?.[0] || 0, grades[area]?.[1] || 0]) ?? "-"}
+                          </td>
+                          <td className="border border-gray-200 p-2 text-center">
+                            {(calculateFinalGrade([grades[area]?.[0] || 0, grades[area]?.[1] || 0]) || 0) >= 75 ? "PASSED" : "FAILED"}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-gray-50 font-bold">
+                        <td colSpan={2} className="border border-gray-200 p-2">
+                          General Ave. for the Semester:
+                        </td>
+                        <td colSpan={2} className="border border-gray-200 p-2 text-center">
+                          {calculateGeneralAverage()}
+                        </td>
+                        <td className="border border-gray-200 p-2"></td>
+                        <td className="border border-gray-200 p-2 text-center">
+                          {Number(calculateGeneralAverage()) >= 75 ? "PASSED" : "FAILED"}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="w-1/2 p-6 border rounded shadow">
+                  <h2 className="text-lg font-bold mb-4">
+                    REPORT ON LEARNING PROGRESS AND ACHIEVEMENT
+                  </h2>
+                  <table className="w-full border-collapse border border-gray-200">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-200 p-2 w-1/3">
+                          Learning Areas
+                        </th>
+                        <th className="border border-gray-200 p-2 text-center">1</th>
+                        <th className="border border-gray-200 p-2 text-center">2</th>
+                        <th className="border border-gray-200 p-2 text-center">3</th>
+                        <th className="border border-gray-200 p-2 text-center">4</th>
+                        <th className="border border-gray-200 p-2 text-center">
+                          Final Grade
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {learningAreas.map((area) => (
+                        <tr key={area}>
+                          <td className="border border-gray-200 p-2">{area}</td>
+                          {[0, 1, 2, 3].map((quarter) => (
+                            <td
+                              key={quarter}
+                              className="border border-gray-200 p-2 text-center"
+                            >
+                              <input
+                                type="number"
+                                className="w-full text-center"
+                                min="0"
+                                max="100"
+                                value={grades[area]?.[quarter] || ""}
+                                onChange={(e) =>
+                                  handleGradeChange(area, quarter, e.target.value)
+                                }
+                                required
+                              />
+                            </td>
+                          ))}
+                          <td className="border border-gray-200 p-2 text-center">
+                            {area === "MAPEH"
+                              ? calculateFinalGrade(grades["MAPEH"] || []) ?? "-"
+                              : calculateFinalGrade(grades[area] || []) ?? "-"}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <td className="border border-gray-200 p-2 font-bold">
+                          General Average
+                        </td>
+                        <td
+                          colSpan={5}
+                          className="border border-gray-200 p-2 text-center"
+                        >
+                          {calculateGeneralAverage()}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+  
               <div className="w-1/2 p-6 border rounded shadow">
-                <h2 className="text-lg font-bold mb-4">
-                  REPORT ON LEARNING PROGRESS AND ACHIEVEMENT
-                </h2>
+                <h2 className="text-lg font-bold mb-4">List of Students</h2>
                 <table className="w-full border-collapse border border-gray-200">
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="border border-gray-200 p-2 w-1/3">
-                        Learning Areas
-                      </th>
-                      <th className="border border-gray-200 p-2 text-center">1</th>
-                      <th className="border border-gray-200 p-2 text-center">2</th>
-                      <th className="border border-gray-200 p-2 text-center">3</th>
-                      <th className="border border-gray-200 p-2 text-center">4</th>
+                      <th className="border border-gray-200 p-2">Name</th>
+                      <th className="border border-gray-200 p-2">LRN</th>
                       <th className="border border-gray-200 p-2 text-center">
-                        Final Grade
+                        General Average
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {learningAreas.map((area) => (
-                      <tr key={area}>
-                        <td className="border border-gray-200 p-2">{area}</td>
-                        {[0, 1, 2, 3].map((quarter) => (
-                          <td
-                            key={quarter}
-                            className="border border-gray-200 p-2 text-center"
-                          >
-                            <input
-                              type="number"
-                              className="w-full text-center"
-                              min="0"
-                              max="100"
-                              value={grades[area]?.[quarter] || ""}
-                              onChange={(e) =>
-                                handleGradeChange(area, quarter, e.target.value)
-                              }
-                              required
-                            />
+                    {sections.map((section) =>
+                      section.students.map((student) => (
+                        <tr key={student.id}>
+                          <td className="border border-gray-200 p-2">{student.fullName}</td>
+                          <td className="border border-gray-200 p-2">{student.lrn}</td>
+                          <td className="border border-gray-200 p-2 text-center">
+                            {studentAverages[student.id] !== undefined
+                              ? studentAverages[student.id].toFixed(2)
+                              : "-"}
                           </td>
-                        ))}
-                        <td className="border border-gray-200 p-2 text-center">
-                          {area === "MAPEH"
-                            ? calculateFinalGrade(grades["MAPEH"] || []) ?? "-"
-                            : calculateFinalGrade(grades[area] || []) ?? "-"}
-                        </td>
-                      </tr>
-                    ))}
-                    <tr>
-                      <td className="border border-gray-200 p-2 font-bold">
-                        General Average
-                      </td>
-                      <td
-                        colSpan={5}
-                        className="border border-gray-200 p-2 text-center"
-                      >
-                        {calculateGeneralAverage()}
-                      </td>
-                    </tr>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
-                <div className="mt-4 flex justify-end">
-                  <button
-                    onClick={saveGrades}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-                  >
-                    Save Grades
-                  </button>
-                </div>
               </div>
-  
-{/* STUDENT LIST */}
-<div className="w-1/2 p-6 border rounded shadow">
-  <h2 className="text-lg font-bold mb-4">List of Students</h2>
-  <table className="w-full border-collapse border border-gray-200">
-    <thead>
-      <tr className="bg-gray-100">
-        <th className="border border-gray-200 p-2">Name</th>
-        <th className="border border-gray-200 p-2">LRN</th>
-        <th className="border border-gray-200 p-2 text-center">
-          General Average
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      {sections.map((section) =>
-        section.students.map((student) => (
-          <tr key={student.id}>
-            <td className="border border-gray-200 p-2">{student.fullName}</td>
-            <td className="border border-gray-200 p-2">{student.lrn}</td>
-            <td className="border border-gray-200 p-2 text-center">
-              {studentAverages[student.id] !== undefined
-                ? studentAverages[student.id].toFixed(2)
-                : "-"}
-            </td>
-          </tr>
-        ))
-      )}
-    </tbody>
-  </table>
-</div>
-
-
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={saveGrades}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              >
+                Save Grades
+              </button>
             </div>
           </div>
         ))
@@ -559,5 +652,5 @@ useEffect(() => {
       )}
     </div>
   );
-  
 }
+

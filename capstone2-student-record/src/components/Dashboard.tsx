@@ -1,9 +1,8 @@
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import React, { useState, useEffect } from "react";
-import { Line } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import { FontSpec } from 'chart.js';
 import { UserCircle2, Users, BookOpen, BarChart3, Moon, Sun } from 'lucide-react';
-import { Bar } from 'react-chartjs-2';
 import { db } from "../firebaseConfig";
 import { dropoutReasons } from "../reasons";
 import {
@@ -57,31 +56,88 @@ const Dashboard: React.FC = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [topStudents, setTopStudents] = useState<{ studentName: string; generalAverage: number; gradeLevel: string }[]>([]);
   const [dropoutData, setDropoutData] = useState<{ [reason: string]: number }>({});
+  const [subjectAverages, setSubjectAverages] = useState<{ [key: string]: number }>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [subjects, setSubjects] = useState<{ name: string; averageGrade: number }[]>([]);
 
-// Generate gradient colors
-const generateGradientColors = (baseColor: string, steps: number): string[] => {
-  const shades: string[] = [];
-  for (let i = 0; i < steps; i++) {
-    const factor = i / (steps - 1);
-    const color = lightenDarkenColor(baseColor, factor * 50 - 25);
-    shades.push(color);
-  }
-  return shades;
-};
 
-const lightenDarkenColor = (hex: string, percent: number): string => {
-  let num = parseInt(hex.replace("#", ""), 16),
-    amt = Math.round(2.55 * percent),
-    R = (num >> 16) + amt,
-    G = ((num >> 8) & 0x00ff) + amt,
-    B = (num & 0x0000ff) + amt;
-  return (
-    "#" +
-    (0x1000000 + (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 + (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 + (B < 255 ? (B < 1 ? 0 : B) : 255))
-      .toString(16)
-      .slice(1)
-  );
-};
+  // Generate gradient colors
+  const generateGradientColors = (baseColor: string, steps: number): string[] => {
+    const shades: string[] = [];
+    for (let i = 0; i < steps; i++) {
+      const factor = i / (steps - 1);
+      const color = lightenDarkenColor(baseColor, factor * 50 - 25);
+      shades.push(color);
+    }
+    return shades;
+  };
+
+  const lightenDarkenColor = (hex: string, percent: number): string => {
+    let num = parseInt(hex.replace("#", ""), 16),
+      amt = Math.round(2.55 * percent),
+      R = (num >> 16) + amt,
+      G = ((num >> 8) & 0x00ff) + amt,
+      B = (num & 0x0000ff) + amt;
+    return (
+      "#" +
+      (0x1000000 + (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 + (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 + (B < 255 ? (B < 1 ? 0 : B) : 255))
+        .toString(16)
+        .slice(1)
+    );
+  };
+
+  useEffect(() => {
+    const fetchSubjectsAndAverages = async () => {
+      setIsLoading(true);
+      setError(null);
+  
+      try {
+        const gradesCollection = collection(db, "grades");
+        const gradesSnapshot = await getDocs(gradesCollection);
+  
+        const subjectGrades: Record<string, { total: number; count: number }> = {};
+        const allSubjects = new Set<string>();
+  
+        gradesSnapshot.forEach((doc) => {
+          const data = doc.data();
+          const learningAreas = data.learningAreas || [];
+  
+          learningAreas.forEach((area: { name: string, finalGrade: number }) => {
+            allSubjects.add(area.name);
+  
+            // Accumulate grades for each subject
+            if (!subjectGrades[area.name]) {
+              subjectGrades[area.name] = { total: 0, count: 0 };
+            }
+            subjectGrades[area.name].total += area.finalGrade;
+            subjectGrades[area.name].count += 1;
+          });
+        });
+  
+        // Calculate average grades
+        const averages: Record<string, number> = {};
+        for (const subject in subjectGrades) {
+          averages[subject] = subjectGrades[subject].total / subjectGrades[subject].count;
+        }
+  
+        setSubjects(
+          Array.from(allSubjects).sort().map((subject) => ({
+            name: subject,
+            averageGrade: averages[subject] || 0,
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching subjects and averages:", error);
+        setError("Failed to load subjects and averages. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    fetchSubjectsAndAverages();
+  }, []);
+
 
   useEffect(() => {
     const fetchDropouts = async () => {
@@ -111,7 +167,6 @@ const lightenDarkenColor = (hex: string, percent: number): string => {
     fetchDropouts();
   }, []);
   
-  
   useEffect(() => {
     const fetchTopStudents = async () => {
       try {
@@ -136,195 +191,186 @@ const lightenDarkenColor = (hex: string, percent: number): string => {
 
     fetchTopStudents();
   }, []);
-  
 
   const allSubjects = [...predefinedSubjects, ...dbSubjects];
 
   const [chartData, setChartData] = useState<{ labels: string[]; data: number[] }>({
     labels: [],
     data: [],
-});
+  });
 
-const [sampleData] = useState({
-  "2019": 0,
-  "2020": 350,
-  "2021": 500, // Example sample data
-  "2022": 156,
-  "2023": 562,
-});
+  const [sampleData] = useState({
+    "2019": 0,
+    "2020": 350,
+    "2021": 500,
+    "2022": 156,
+    "2023": 562,
+  });
 
+  const dropoutLabels = Object.keys(dropoutData); 
+  const dropoutCounts = Object.values(dropoutData); 
+  const baseColor = "#3b82f6";
+  const gradientColors = generateGradientColors(baseColor, dropoutLabels.length);
 
-const dropoutLabels = Object.keys(dropoutData); 
-const dropoutCounts = Object.values(dropoutData); 
-const baseColor = "#3b82f6";
-const gradientColors = generateGradientColors(baseColor, dropoutLabels.length);
-
-
-const dropoutChartData = {
-  labels: dropoutLabels,
-  datasets: [
-    {
-      label: 'Dropout Reasons',
-      data: dropoutCounts,
-      backgroundColor: gradientColors,
-      borderColor: gradientColors,
-      borderWidth: 1,
-    },
-  ],
-};
-
-const dropoutChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: true,
-      position: 'top' as const,
-      labels: {
-        generateLabels: (_chart: Chart) => { // Explicitly type chart
-          return dropoutLabels.map((label, index) => ({
-            text: label,
-            fillStyle: gradientColors[index], // Bar color
-            fontColor: darkMode ? '#FFFFFF' : '#000000', // White for dark mode, black for light mode
-            hidden: false,
-          }));
-        },
+  const dropoutChartData = {
+    labels: dropoutLabels,
+    datasets: [
+      {
+        label: 'Dropout Reasons',
+        data: dropoutCounts,
+        backgroundColor: gradientColors,
+        borderColor: gradientColors,
+        borderWidth: 1,
       },
-    },
-    title: {
-      display: true,
-      text: 'Bar Graph Dropouts (2024-2025)',
-      color: darkMode ? '#D1D5DB' : '#374151', // Title color
-      font: {
-        size: 16,
-        weight: 'bold',
-      } as Partial<FontSpec>,
-    },
-  },
-  scales: {
-    x: {
-      title: {
-        display: true,
-        text: 'Dropout Reasons', // Set meaningful text
-        color: darkMode ? '#D1D5DB' : '#374151', // Axis label color
-        font: {
-          size: 14,
-        },
-      },
-      ticks: {
-        color: darkMode ? '#D1D5DB' : '#374151', // Tick color
-        autoSkip: false, // Display all labels
-        maxRotation: 0, // Keep labels horizontal
-        minRotation: 0,
-        font: {
-          size: 12,
-        },
-        padding: 10, // Add spacing for better readability
-        callback: function (_value: string | number, index: number) {
-          const reason = dropoutLabels[index]; // Map index to the corresponding reason
-          return reason.length > 12
-            ? reason.slice(0, 12) + '...' // Truncate if too long
-            : reason; // Return full text if short
-        },
-      },
-      grid: {
-        drawTicks: true,
-        drawOnChartArea: false,
-        color: darkMode ? '#374151' : '#E5E7EB', // Grid line color
-      },
-    },
-    y: {
-      beginAtZero: true,
-      max:20,
-      title: {
-        display: true,
-        text: 'Count', // Show "Count" on y-axis
-        color: darkMode ? '#D1D5DB' : '#374151',
-        font: {
-          size: 14,
-        },
-      },
-      ticks: {
-        color: darkMode ? '#D1D5DB' : '#374151', // Tick color
-      },
-    },
-  },  
-};
-
-
-
-
-useEffect(() => {
-  const fetchEnrollmentData = async () => {
-      const enrollmentCounts: { [year: string]: number } = { ...sampleData }; // Initialize with sample data
-
-      try {
-          const querySnapshot = await getDocs(collection(db, 'enrollmentForms'));
-          querySnapshot.forEach((doc) => {
-              const schoolYear: string = doc.data().schoolYear;
-              const startYear = schoolYear.split('-')[0]; // Extract the start year (e.g., 2024 from "2024-2025")
-              enrollmentCounts[startYear] = (enrollmentCounts[startYear] || 0) + 1;
-          });
-
-          // Prepare data for the chart
-          const labels = Object.keys(enrollmentCounts).sort(); // Sort years
-          const data = labels.map((year) => enrollmentCounts[year]); // Map counts to sorted years
-
-          setChartData({ labels, data });
-      } catch (error) {
-          console.error('Error fetching enrollment data: ', error);
-      }
+    ],
   };
 
-  fetchEnrollmentData();
-}, [sampleData]); // Rerun if sample data changes
-
-// Chart.js Data
-const data = {
-  labels: chartData.labels,
-  datasets: [
-      {
-          label: 'Enrollments',
-          data: chartData.data,
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 2,
-          tension: 0.3, // Smooth curves
-      },
-  ],
-};
-
-// Chart.js Options
-const options = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
+  const dropoutChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
       legend: {
-          display: true,
-          position: 'top' as const,
-      },
-  },
-  scales: {
-      x: {
-          title: {
-              display: true,
-              text: 'School Year',
+        display: true,
+        position: 'top' as const,
+        labels: {
+          generateLabels: (_chart: Chart) => {
+            return dropoutLabels.map((label, index) => ({
+              text: label,
+              fillStyle: gradientColors[index],
+              fontColor: darkMode ? '#FFFFFF' : '#000000',
+              hidden: false,
+            }));
           },
+        },
+      },
+      title: {
+        display: true,
+        text: 'Bar Graph Dropouts (2024-2025)',
+        color: darkMode ? '#D1D5DB' : '#374151',
+        font: {
+          size: 16,
+          weight: 'bold',
+        } as Partial<FontSpec>,
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Dropout Reasons',
+          color: darkMode ? '#D1D5DB' : '#374151',
+          font: {
+            size: 14,
+          },
+        },
+        ticks: {
+          color: darkMode ? '#D1D5DB' : '#374151',
+          autoSkip: false,
+          maxRotation: 0,
+          minRotation: 0,
+          font: {
+            size: 12,
+          },
+          padding: 10,
+          callback: function (_value: string | number, index: number) {
+            const reason = dropoutLabels[index];
+            return reason.length > 12
+              ? reason.slice(0, 12) + '...'
+              : reason;
+          },
+        },
+        grid: {
+          drawTicks: true,
+          drawOnChartArea: false,
+          color: darkMode ? '#374151' : '#E5E7EB',
+        },
+      },
+      y: {
+        beginAtZero: true,
+        max:20,
+        title: {
+          display: true,
+          text: 'Count',
+          color: darkMode ? '#D1D5DB' : '#374151',
+          font: {
+            size: 14,
+          },
+        },
+        ticks: {
+          color: darkMode ? '#D1D5DB' : '#374151',
+        },
+      },
+    },  
+  };
+
+  useEffect(() => {
+    const fetchEnrollmentData = async () => {
+      const enrollmentCounts: { [year: string]: number } = { ...sampleData };
+
+      try {
+        const querySnapshot = await getDocs(collection(db, 'enrollmentForms'));
+        querySnapshot.forEach((doc) => {
+          const schoolYear: string = doc.data().schoolYear;
+          const startYear = schoolYear.split('-')[0];
+          enrollmentCounts[startYear] = (enrollmentCounts[startYear] || 0) + 1;
+        });
+
+        const labels = Object.keys(enrollmentCounts).sort();
+        const data = labels.map((year) => enrollmentCounts[year]);
+
+        setChartData({ labels, data });
+      } catch (error) {
+        console.error('Error fetching enrollment data: ', error);
+      }
+    };
+
+    fetchEnrollmentData();
+  }, [sampleData]);
+
+  const data = {
+    labels: chartData.labels,
+    datasets: [
+      {
+        label: 'Enrollments',
+        data: chartData.data,
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 2,
+        tension: 0.3,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top' as const,
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'School Year',
+        },
       },
       y: {
         grid: {
           drawTicks: true,
-          drawOnChartArea: false, // Disable grid lines inside the chart
-          borderColor: darkMode ? '#374151' : '#4B5563', // Darken x-axis border
+          drawOnChartArea: false,
+          borderColor: darkMode ? '#374151' : '#4B5563',
         },
-          beginAtZero: true,
-          title: {
-              display: true,
-              text: 'Number of Enrollments',
-          },
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Number of Enrollments',
+        },
       },
-  },
-};
+    },
+  };
 
   useEffect(() => {
     const fetchSubjectsFromDB = async () => {
@@ -387,6 +433,41 @@ const options = {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    const fetchSubjectAverages = async () => {
+      try {
+        const gradesCollection = collection(db, "grades");
+        const gradesSnapshot = await getDocs(gradesCollection);
+        
+        const subjectTotals: { [key: string]: { sum: number; count: number } } = {};
+
+        gradesSnapshot.forEach((doc) => {
+          const data = doc.data();
+          const learningAreas = data.learningAreas || [];
+
+          learningAreas.forEach((area: { subject: string; finalGrade: number }) => {
+            if (!subjectTotals[area.subject]) {
+              subjectTotals[area.subject] = { sum: 0, count: 0 };
+            }
+            subjectTotals[area.subject].sum += area.finalGrade;
+            subjectTotals[area.subject].count += 1;
+          });
+        });
+
+        const averages: { [key: string]: number } = {};
+        for (const [subject, { sum, count }] of Object.entries(subjectTotals)) {
+          averages[subject] = Math.round((sum / count) * 10) / 10; // Round to 1 decimal place
+        }
+
+        setSubjectAverages(averages);
+      } catch (error) {
+        console.error("Error fetching subject averages:", error);
+      }
+    };
+
+    fetchSubjectAverages();
+  }, []);
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
   };
@@ -400,7 +481,8 @@ const options = {
             darkMode ? 'bg-gray-800 text-yellow-400' : 'bg-white text-gray-900'
           } shadow-lg`}
         >
-          {darkMode ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+          {darkMode ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />
+}
         </button>
 
         {/* Stats Grid */}
@@ -625,7 +707,11 @@ const options = {
               <h3 className="text-sm font-medium">Average Grade</h3>
               <BarChart3 className={`h-4 w-4 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
             </div>
-            <div className="text-2xl font-bold">85%</div>
+            <div className="text-2xl font-bold">
+              {Object.values(subjectAverages).length > 0
+                ? (Object.values(subjectAverages).reduce((sum, grade) => sum + grade, 0) / Object.values(subjectAverages).length).toFixed(1) + '%'
+                : 'N/A'}
+            </div>
             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Across all subjects</p>
           </div>
         </div>
@@ -668,51 +754,78 @@ const options = {
             )}
         </div>
     </div>
-          {/* Average Grade by Subjects */}
-          <div className={`lg:col-span-4 ${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md`}>
-            <h3 className="text-lg font-semibold mb-4">Average Grade by Subjects</h3>
-            <div className="space-y-4">
-              {['Math', 'Science', 'English', 'History'].map((subject) => (
-                <div key={subject} className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>{subject}</span>
-                    <span>85%</span>
-                  </div>
-                  <div className={`w-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2`}>
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '85%' }} />
-                  </div>
-                </div>
-              ))}
+    
+{/* Average Grade by Subjects */}
+<div className={`lg:col-span-4 ${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md`}>
+  <h3 className="text-lg font-semibold mb-4">Average Grade by Subjects</h3>
+  {isLoading ? (
+    <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading average grades...</p>
+  ) : error ? (
+    <p className="text-center text-red-500">{error}</p>
+  ) : (
+    <div
+      className="space-y-4 max-h-96 overflow-y-auto pr-2"
+      style={{
+        scrollbarWidth: 'none', // Hides scrollbar in Firefox
+      }}
+    >
+      <style>
+        {`.h-48::-webkit-scrollbar {
+          display: none;
+        }`}
+      </style>
+      {subjects.length > 0 ? (
+        // Sort subjects by averageGrade in descending order before mapping
+        [...subjects]
+          .sort((a, b) => b.averageGrade - a.averageGrade) // Sort by highest grade first
+          .map((subject) => (
+            <div key={subject.name} className="space-y-2">
+              <div className="flex justify-between">
+                <span>{subject.name}</span>
+                <span>{subject.averageGrade.toFixed(2)}%</span>
+              </div>
+              <div className={`w-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2`}>
+                <div
+                  className="bg-blue-500 h-2 rounded-full"
+                  style={{ width: `${Math.min(subject.averageGrade, 100)}%` }}
+                />
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 gap-6">
-          
-{/* Bar Chart */}
-<div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md`}>
-  <div className="h-96"> {/* Adjusted height for better visibility */}
-    {dropoutLabels.length > 0 ? (
-      <Bar
-        data={dropoutChartData}
-        options={dropoutChartOptions}
-      />
-    ) : (
-      <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading dropout data...</p>
-    )}
-  </div>
+          ))
+      ) : (
+        <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No subjects available.</p>
+      )}
+    </div>
+  )}
+</div>
 </div>
 
 
 
-        {/* Line Chart */}
-        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md`}>
-           <h3 className="text-lg font-semibold mb-4 text-center">Enrollment Trends</h3>
-           <div className="h-64">
-            <Line data={data} options={options} />
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 gap-6">
+          
+          {/* Bar Chart */}
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md`}>
+            <div className="h-96"> {/* Adjusted height for better visibility */}
+              {dropoutLabels.length > 0 ? (
+                <Bar
+                  data={dropoutChartData}
+                  options={dropoutChartOptions}
+                />
+              ) : (
+                <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading dropout data...</p>
+              )}
             </div>
+          </div>
+
+          {/* Line Chart */}
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md`}>
+            <h3 className="text-lg font-semibold mb-4 text-center">Enrollment Trends</h3>
+            <div className="h-64">
+              <Line data={data} options={options} />
             </div>
+          </div>
         </div>
       </div>
     </div>
@@ -720,3 +833,4 @@ const options = {
 };
 
 export default Dashboard;
+

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaUserCog, FaClipboardList, FaBook, FaUserGraduate, FaTimesCircle } from 'react-icons/fa';
+import { FaTachometerAlt, FaUserCog, FaClipboardList, FaBook, FaUserGraduate, FaTimesCircle } from 'react-icons/fa';
 
 interface SidebarProps {
     isCollapsed: boolean;
@@ -12,7 +12,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, role }) => {
 
     // Define menu items with roles that are allowed to access each item
     const menuItems = [
-        { path: '/', label: 'Home', icon: <FaHome className="text-blue-400" />, roles: ['Admin', 'Adviser', 'Faculty'] },
+        { path: '/', label: 'Dashboard', icon: <FaTachometerAlt className="text-blue-400" />, roles: ['Admin', 'Adviser', 'Faculty'] },
         { path: '/user-management', label: 'User Management', icon: <FaUserCog className="text-green-400" />, roles: ['Admin'] },
         { path: '/form-templates', label: 'Form Templates', icon: <FaClipboardList className="text-yellow-400" />, roles: ['Admin', 'Adviser', 'Faculty'] },
         { path: '/enrollment', label: 'Enrollment', icon: <FaUserGraduate className="text-cyan-400" />, roles: ['Admin'] },
