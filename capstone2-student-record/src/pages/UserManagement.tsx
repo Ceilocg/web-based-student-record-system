@@ -1,5 +1,3 @@
-'use client'
-
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -7,9 +5,7 @@ import { Link } from 'react-router-dom';
 import { 
     getAuth, 
     onAuthStateChanged, 
-    updatePassword, 
-    EmailAuthProvider, 
-    reauthenticateWithCredential 
+    updatePassword
 } from 'firebase/auth';
 import { storage } from '../firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -40,7 +36,7 @@ const UserManagement: React.FC = () => {
   const [role, setRole] = useState('Admin');
   const [status, setStatus] = useState('Active');
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [reauthPassword, setReauthPassword] = useState('');
+
 
   const [userCounts, setUserCounts] = useState({ Admin: 0, Adviser: 0, Faculty: 0 });
   const [darkMode, setDarkMode] = useState(true);
@@ -92,7 +88,7 @@ const UserManagement: React.FC = () => {
     setRole(user.role);
     setStatus(user.status);
     setImageFile(null);
-    setReauthPassword('');
+ 
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -105,11 +101,6 @@ const UserManagement: React.FC = () => {
     let newImageUrl = editingUser.imageUrl;
 
     try {
-        if (currentUser && reauthPassword) {
-            const credential = EmailAuthProvider.credential(currentUser.email || '', reauthPassword);
-            await reauthenticateWithCredential(currentUser, credential);
-        }
-
         if (imageFile) {
             const storageRef = ref(storage, `userImages/${editingUser.id}`);
             await uploadBytes(storageRef, imageFile);
@@ -130,12 +121,12 @@ const UserManagement: React.FC = () => {
 
         resetFormState();
         await fetchUsers();
-
     } catch (error: any) {
         console.error("Error updating user:", error);
         alert("An error occurred while saving. Please check your input and try again.");
     }
-  };
+};
+
 
   const resetFormState = () => {
     setEditingUser(null);
@@ -145,7 +136,6 @@ const UserManagement: React.FC = () => {
     setRole('Admin');
     setStatus('Active');
     setImageFile(null);
-    setReauthPassword('');
   };
 
   const handleCancelEdit = () => {
@@ -214,14 +204,7 @@ const UserManagement: React.FC = () => {
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
-            <input
-              type="password"
-              placeholder="Current Password (for verification)"
-              value={reauthPassword}
-              onChange={(e) => setReauthPassword(e.target.value)}
-              className={`w-full p-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-gray-100 border-gray-300 text-gray-900'} border rounded-md`}
-              required
-            />
+
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}

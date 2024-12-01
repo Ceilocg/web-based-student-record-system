@@ -124,66 +124,86 @@ const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
             <h1 className="text-xl font-bold md:text-2xl">Valentina B. Boncan National High School</h1>
 
             <div className="relative flex items-center space-x-4">
-                {/* Notification Bell */}
-                <div className="relative">
-                    <button
-                        onClick={() => setNotificationsOpen(!notificationsOpen)}
-                        className="relative text-white focus:outline-none"
-                    >
-                        <FaBell className="text-2xl" />
-                        {notifications.length > 0 && (
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs px-1">
-                                {notifications.length}
-                            </span>
-                        )}
-                    </button>
+{/* Notification Bell */}
+<div className="relative">
+    <button
+        onClick={() => setNotificationsOpen(!notificationsOpen)}
+        className="relative text-white focus:outline-none hover:text-gray-300 transition-colors"
+    >
+        <FaBell className="text-2xl" />
+        {notifications.length > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs px-2 py-1 shadow-md">
+                {notifications.length}
+            </span>
+        )}
+    </button>
 
-                    {notificationsOpen && (
-                        <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg z-50">
-                            <div className="py-2 px-4 border-b border-gray-200">
-                                <h3 className="text-sm font-semibold text-gray-800">Notifications</h3>
+    {notificationsOpen && (
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50">
+            {/* Header */}
+            <div className="py-3 px-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-800">Notifications</h3>
+                <button
+                    className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                    onClick={() => setNotificationsOpen(false)}
+                >
+                    Close
+                </button>
+            </div>
+
+            {/* Notifications List */}
+            <ul className="py-2 max-h-64 overflow-y-auto">
+                {notifications.length === 0 ? (
+                    <li className="px-4 py-2 text-center text-gray-700">No new notifications</li>
+                ) : (
+                    notifications.map((notification) => (
+                        <li
+                            key={notification.id}
+                            className="px-4 py-3 text-sm text-gray-800 hover:bg-gray-100 transition-colors border-b border-gray-200"
+                        >
+                            <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                    <p>{notification.message}</p>
+                                    <p className="text-gray-600 text-xs mt-1">
+                                        <strong>LRN:</strong> {notification.lrn || 'N/A'}
+                                    </p>
+                                </div>
+                                
                             </div>
-                            <ul className="py-2 max-h-64 overflow-y-auto">
-                                {notifications.length === 0 ? (
-                                    <li className="px-4 py-2 text-gray-700">No new notifications</li>
-                                ) : (
-                                    notifications.map((notification) => (
-                                        <li
-                                            key={notification.id}
-                                            className="px-4 py-2 text-sm text-gray-800 border-b border-gray-200"
-                                        >
-                                            <div>{notification.message}</div>
-                                            <div className="text-gray-600 text-xs">
-                                                <strong>LRN:</strong> {notification.lrn || 'N/A'}
-                                            </div>
-                                            <div className="mt-2 space-x-2">
-                                                <button
-                                                    className="bg-green-500 text-white px-2 py-1 rounded text-xs"
-                                                    onClick={() =>
-                                                        handleRequestAction(notification.id, 'accept', notification.lrn)
-                                                    }
-                                                >
-                                                    Accept
-                                                </button>
-                                                <button
-                                                    className="bg-red-500 text-white px-2 py-1 rounded text-xs"
-                                                    onClick={() => handleRequestAction(notification.id, 'decline')}
-                                                >
-                                                    Decline
-                                                </button>
-                                            </div>
-                                        </li>
-                                    ))
-                                )}
-                            </ul>
-                            <div className="p-2 text-center">
-                                <Link to="/notifications" className="text-blue-500 text-sm underline">
-                                    View All Requests
-                                </Link>
+                            <div className="mt-2 flex space-x-2">
+                                <button
+                                    className="bg-green-500 text-white px-3 py-1 rounded-md text-xs hover:bg-green-600 transition-colors"
+                                    onClick={() =>
+                                        handleRequestAction(notification.id, 'accept', notification.lrn)
+                                    }
+                                >
+                                    Accept
+                                </button>
+                                <button
+                                    className="bg-red-500 text-white px-3 py-1 rounded-md text-xs hover:bg-red-600 transition-colors"
+                                    onClick={() => handleRequestAction(notification.id, 'decline')}
+                                >
+                                    Decline
+                                </button>
                             </div>
-                        </div>
-                    )}
-                </div>
+                        </li>
+                    ))
+                )}
+            </ul>
+
+            {/* Footer */}
+            <div className="p-3 text-center border-t border-gray-200 bg-gray-50">
+                <Link
+                    to="/notifications"
+                    className="text-blue-500 text-sm font-medium underline hover:text-blue-700 transition-colors"
+                >
+                    View All Requests
+                </Link>
+            </div>
+        </div>
+    )}
+</div>
+
 
                 {/* User Avatar */}
                 <div className="relative">

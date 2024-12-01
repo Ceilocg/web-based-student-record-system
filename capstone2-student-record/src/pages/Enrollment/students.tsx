@@ -216,7 +216,7 @@ const StudentList: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h2 className="text-3xl font-semibold text-gray-800 mb-4 text-center">List of Students</h2>
+      
 
       <div>
         <h3 className="text-xl font-semibold mb-2">Junior High</h3>

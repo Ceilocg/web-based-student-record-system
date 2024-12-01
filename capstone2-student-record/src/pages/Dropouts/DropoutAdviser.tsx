@@ -26,6 +26,8 @@ export default function Component() {
   const [showDropoutReasons, setShowDropoutReasons] = useState(false)
   const [selectedDropoutReason, setSelectedDropoutReason] = useState<string | null>(null)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [studentsWithGrades, setStudentsWithGrades] = useState<Set<string>>(new Set());
+
 
   const dropoutReasons = [
    "Poverty",
@@ -40,6 +42,29 @@ export default function Component() {
 "Natural disasters",
   ].sort()
 
+
+  useEffect(() => {
+    const fetchGrades = async () => {
+      try {
+        const gradesSnapshot = await getDocs(collection(db, 'grades'));
+        const studentIds = new Set<string>();
+  
+        gradesSnapshot.forEach((doc) => {
+          const gradeData = doc.data();
+          if (gradeData.studentId) {
+            studentIds.add(gradeData.studentId);
+          }
+        });
+  
+        setStudentsWithGrades(studentIds);
+      } catch (error) {
+        console.error('Error fetching grades:', error);
+      }
+    };
+  
+    fetchGrades();
+  }, []);
+   
   useEffect(() => {
     const fetchSectionsForAdviser = async () => {
       try {
@@ -221,16 +246,21 @@ export default function Component() {
                       <td className="px-4 py-2 border">{student.age}</td>
                       <td className="px-4 py-2 border">{student.birthdate}</td>
                       <td className="px-4 py-2 border text-center">
-                        <button
-                          className={`hover:underline ${
-                            student.status === 'Dropout' ? 'text-red-500' : 'text-blue-500'
-                          }`}
-                          onClick={() => handleDropoutClick(student)}
-                          disabled={student.status === 'Dropout'}
-                        >
-                          {student.status === 'Dropout' ? 'Dropped Out' : 'Dropout'}
-                        </button>
-                      </td>
+  {studentsWithGrades.has(student.id) ? (
+    <span className="text-gray-400">Action Not Available</span>
+  ) : (
+    <button
+      className={`hover:underline ${
+        student.status === 'Dropout' ? 'text-red-500' : 'text-blue-500'
+      }`}
+      onClick={() => handleDropoutClick(student)}
+      disabled={student.status === 'Dropout'}
+    >
+      {student.status === 'Dropout' ? 'Dropped Out' : 'Dropout'}
+    </button>
+  )}
+</td>
+
                     </tr>
                   ))}
                 </tbody>
