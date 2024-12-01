@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { submitEnrollmentForm } from '../Enrollment/enrollmentHandler';
 import StudentList from './students';
-import { doc,  getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { db } from "../../firebaseConfig";
-
-
 
 interface FormData {
   schoolYear: string;
@@ -104,7 +102,6 @@ export default function EnrollmentForm() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<FormData>>({});
 
-
   const fetchUserRole = async (userId: string) => {
     const userDocRef = doc(db, "users", userId);
     const userDocSnap = await getDoc(userDocRef);
@@ -125,7 +122,6 @@ export default function EnrollmentForm() {
       }
     });
   }, []);
-
 
   useEffect(() => {
     if (formData.sameAsCurrentAddress) {
@@ -173,7 +169,6 @@ export default function EnrollmentForm() {
       [name]: undefined,
     }));
   };
-  
 
   const handleMultiSelect = (name: keyof FormData, value: string, checked: boolean) => {
     setFormData(prev => ({
@@ -228,7 +223,6 @@ export default function EnrollmentForm() {
     setErrors(newErrors);
     return isValid;
   };
-  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,467 +254,491 @@ export default function EnrollmentForm() {
   };
 
   return (
-    <div className="flex space-x-6">
+    <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6 p-6 bg-gray-100 min-h-screen">
       {/* Enrollment Form */}
-      <form onSubmit={handleSubmit} className="max-w-4xl w-1/2 p-6 space-y-8">
-        <h1 className="text-3xl font-bold text-center mb-6"> Enrollment Form</h1>
-      {/* Basic Information */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Basic Information</h2>
-        <div className="grid grid-cols-2 gap-4">
-        <input
-        type="text"
-        name="schoolYear"
-        value={formData.schoolYear}
-        onChange={handleChange}
-        placeholder="School Year"
-        className="border p-2 rounded"
-        readOnly // Make the input read-only
-      />
-          <select
-            name="gradeLevel"
-            value={formData.gradeLevel}
-            onChange={handleChange}
-            className="border p-2 rounded"
-          >
-            <option value="">Select Grade Level</option>
-            {[7, 8, 9, 10, 11, 12].map((grade) => (
-              <option key={grade} value={grade}>Grade {grade}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <form onSubmit={handleSubmit} className="w-full lg:w-1/2 space-y-6">
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="bg-gray-600 text-white py-4 px-6">
+            <h1 className="text-2xl font-bold text-center">Enrollment Form</h1>
+          </div>
+          <div className="p-6 space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-800">Basic Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  name="schoolYear"
+                  value={formData.schoolYear}
+                  onChange={handleChange}
+                  placeholder="School Year"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  readOnly
+                />
+                <select
+                  name="gradeLevel"
+                  value={formData.gradeLevel}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Grade Level</option>
+                  {[7, 8, 9, 10, 11, 12].map((grade) => (
+                    <option key={grade} value={grade}>Grade {grade}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-      {/* Learner Information */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Learner Information</h2>
-        <input
-          type="text"
-          name="psaBirthCertNo"
-          value={formData.psaBirthCertNo}
-          onChange={handleChange}
-          placeholder="PSA Birth Certificate No."
-          className="w-full border p-2 rounded"
-        />
-        <input
-          type="text"
-          name="lrn"
-          value={formData.lrn}
-          onChange={handleChange}
-          placeholder="Learner Reference No. (LRN)"
-          className="w-full border p-2 rounded"
-          maxLength={12}
-          pattern="\d{12}"
-          title="LRN must be exactly 12 digits"
-        />
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              placeholder="Last Name"
-              className={`border p-2 rounded w-full ${errors.lastName ? 'border-red-500' : ''}`}
-            />
-            {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
-          </div>
-          <div>
-            <input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              placeholder="First Name"
-              className={`border p-2 rounded w-full ${errors.firstName ? 'border-red-500' : ''}`}
-            />
-            {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
-          </div>
-          <input
-            type="text"
-            name="middleName"
-            value={formData.middleName}
-            onChange={handleChange}
-            placeholder="Middle Name"
-            className="border p-2 rounded"
-          />
-        </div>
-        <input
-          type="text"
-          name="extensionName"
-          value={formData.extensionName}
-          onChange={handleChange}
-          placeholder="Extension Name (e.g. Jr., III)"
-          className="w-full border p-2 rounded"
-        />
-        <div className="grid grid-cols-3 gap-4">
-          <input
-            type="date"
-            name="birthdate"
-            value={formData.birthdate}
-            onChange={handleChange}
-            className="border p-2 rounded"
-          />
-          <select
-            name="sex"
-            value={formData.sex}
-            onChange={handleChange}
-            className="border p-2 rounded"
-          >
-            <option value="">Select Sex</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
-          <input
-            type="number"
-            name="age"
-            value={formData.age}
-            onChange={handleChange}
-            placeholder="Age"
-            className="border p-2 rounded"
-          />
-        </div>
-        <input
-          type="text"
-          name="placeOfBirth"
-          value={formData.placeOfBirth}
-          onChange={handleChange}
-          placeholder="Place of Birth (Municipality/City)"
-          className="w-full border p-2 rounded"
-        />
-        <input
-          type="text"
-          name="motherTongue"
-          value={formData.motherTongue}
-          onChange={handleChange}
-          placeholder="Mother Tongue"
-          className="w-full border p-2 rounded"
-        />
-        <div className="space-y-2">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="ip"
-              checked={formData.ip}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            Belonging to Indigenous Peoples (IP) Community/Indigenous Cultural Community
-          </label>
-          {formData.ip && (
-            <input
-              type="text"
-              name="ipCommunity"
-              value={formData.ipCommunity}
-              onChange={handleChange}
-              placeholder="Specify IP Community"
-              className="w-full border p-2 rounded"
-            />
-          )}
-        </div>
-        <div className="space-y-2">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="is4ps"
-              checked={formData.is4ps}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            Is your family a beneficiary of 4Ps?
-          </label>
-          {formData.is4ps && (
-            <input
-              type="text"
-              name="household4psId"
-              value={formData.household4psId}
-              onChange={handleChange}
-              placeholder="4Ps Household ID Number"
-              className="w-full border p-2 rounded"
-            />
-          )}
-        </div>
-        <div className="space-y-2">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="hasDisability"
-              checked={formData.hasDisability}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            Is the child a Learner with Disability?
-          </label>
-          {formData.hasDisability && (
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                'Visual Impairment', 'Hearing Impairment', 'Autism Spectrum Disorder',
-                'Learning Disability', 'Intellectual Disability', 'Speech/Language Disorder',
-                'Emotional-Behavioral Disorder', 'Orthopedic/Physical Handicap',
-                'Cerebral Palsy', 'Special Health Problem/Chronic Disease', 'Multiple Disorder'
-              ].map((disability) => (
-                <label key={disability} className="flex items-center">
+            {/* Learner Information */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-800">Learner Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  name="psaBirthCertNo"
+                  value={formData.psaBirthCertNo}
+                  onChange={handleChange}
+                  placeholder="PSA Birth Certificate No."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="text"
+                  name="lrn"
+                  value={formData.lrn}
+                  onChange={handleChange}
+                  placeholder="Learner Reference No. (LRN)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength={12}
+                  pattern="\d{12}"
+                  title="LRN must be exactly 12 digits"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    placeholder="Last Name"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.lastName ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    placeholder="First Name"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.firstName ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
+                </div>
+                <input
+                  type="text"
+                  name="middleName"
+                  value={formData.middleName}
+                  onChange={handleChange}
+                  placeholder="Middle Name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <input
+                type="text"
+                name="extensionName"
+                value={formData.extensionName}
+                onChange={handleChange}
+                placeholder="Extension Name (e.g. Jr., III)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                  type="date"
+                  name="birthdate"
+                  value={formData.birthdate}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <select
+                  name="sex"
+                  value={formData.sex}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Sex</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+                <input
+                  type="number"
+                  name="age"
+                  value={formData.age}
+                  onChange={handleChange}
+                  placeholder="Age"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <input
+                type="text"
+                name="placeOfBirth"
+                value={formData.placeOfBirth}
+                onChange={handleChange}
+                placeholder="Place of Birth (Municipality/City)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                name="motherTongue"
+                value={formData.motherTongue}
+                onChange={handleChange}
+                placeholder="Mother Tongue"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="space-y-2">
+                <label className="flex items-center">
                   <input
                     type="checkbox"
-                    name="disabilityType"
-                    value={disability}
-                    checked={formData.disabilityType.includes(disability)}
-                    onChange={(e) => handleMultiSelect('disabilityType', disability, e.target.checked)}
-                    className="mr-2"
+                    name="ip"
+                    checked={formData.ip}
+                    onChange={handleChange}
+                    className="mr-2 form-checkbox h-5 w-5 text-blue-600"
                   />
-                  {disability}
+                  <span className="text-sm text-gray-700">Belonging to Indigenous Peoples (IP) Community/Indigenous Cultural Community</span>
                 </label>
-              ))}
+                {formData.ip && (
+                  <input
+                    type="text"
+                    name="ipCommunity"
+                    value={formData.ipCommunity}
+                    onChange={handleChange}
+                    placeholder="Specify IP Community"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="is4ps"
+                    checked={formData.is4ps}
+                    onChange={handleChange}
+                    className="mr-2 form-checkbox h-5 w-5 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">Is your family a beneficiary of 4Ps?</span>
+                </label>
+                {formData.is4ps && (
+                  <input
+                    type="text"
+                    name="household4psId"
+                    value={formData.household4psId}
+                    onChange={handleChange}
+                    placeholder="4Ps Household ID Number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="hasDisability"
+                    checked={formData.hasDisability}
+                    onChange={handleChange}
+                    className="mr-2 form-checkbox h-5 w-5 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">Is the child a Learner with Disability?</span>
+                </label>
+                {formData.hasDisability && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {[
+                      'Visual Impairment', 'Hearing Impairment', 'Autism Spectrum Disorder',
+                      'Learning Disability', 'Intellectual Disability', 'Speech/Language Disorder',
+                      'Emotional-Behavioral Disorder', 'Orthopedic/Physical Handicap',
+                      'Cerebral Palsy', 'Special Health Problem/Chronic Disease', 'Multiple Disorder'
+                    ].map((disability) => (
+                      <label key={disability} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="disabilityType"
+                          value={disability}
+                          checked={formData.disabilityType.includes(disability)}
+                          onChange={(e) => handleMultiSelect('disabilityType', disability, e.target.checked)}
+                          className="mr-2 form-checkbox h-5 w-5 text-blue-600"
+                        />
+                        <span className="text-sm text-gray-700">{disability}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Address Information */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Address Information</h2>
-        <div className="space-y-2">
-          <h3 className="font-medium">Current Address</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="number"
-              name="currentHouseNo"
-              value={formData.currentHouseNo}
-              onChange={handleChange}
-              placeholder="House No."
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="currentStreet"
-              value={formData.currentStreet}
-              onChange={handleChange}
-              placeholder="Street Name"
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="currentBarangay"
-              value={formData.currentBarangay}
-              onChange={handleChange}
-              placeholder="Barangay"
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="currentMunicipality"
-              value={formData.currentMunicipality}
-              onChange={handleChange}
-              placeholder="Municipality/City"
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="currentProvince"
-              value={formData.currentProvince}
-              onChange={handleChange}
-              placeholder="Province"
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="currentCountry"
-              value={formData.currentCountry}
-              onChange={handleChange}
-              placeholder="Country"
-              className="border p-2 rounded"
-            />
-            <input
-              type="number"
-              name="currentZipCode"
-              value={formData.currentZipCode}
-              onChange={handleChange}
-              placeholder="Zip Code"
-              className="border p-2 rounded"
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-medium">Permanent Address</h3>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="sameAsCurrentAddress"
-              checked={formData.sameAsCurrentAddress}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            Same as Current Address
-          </label>
-          {!formData.sameAsCurrentAddress && (
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="number"
-                name="permanentHouseNo"
-                value={formData.permanentHouseNo}
-                onChange={handleChange}
-                placeholder="House No."
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="permanentStreet"
-                value={formData.permanentStreet}
-                onChange={handleChange}
-                placeholder="Street Name"
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="permanentBarangay"
-                value={formData.permanentBarangay}
-                onChange={handleChange}
-                placeholder="Barangay"
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="permanentMunicipality"
-                value={formData.permanentMunicipality}
-                onChange={handleChange}
-                placeholder="Municipality/City"
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="permanentProvince"
-                value={formData.permanentProvince}
-                onChange={handleChange}
-                placeholder="Province"
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="permanentCountry"
-                value={formData.permanentCountry}
-                onChange={handleChange}
-                placeholder="Country"
-                className="border p-2 rounded"
-              />
-              <input
-                type="number"
-                name="permanentZipCode"
-                value={formData.permanentZipCode}
-                onChange={handleChange}
-                placeholder="Zip Code"
-                className="border p-2 rounded"
-              />
+            {/* Address Information */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-800">Address Information</h2>
+              <div className="space-y-2">
+                <h3 className="font-medium text-gray-700">Current Address</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="number"
+                    name="currentHouseNo"
+                    value={formData.currentHouseNo}
+                    onChange={handleChange}
+                    placeholder="House No."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="currentStreet"
+                    value={formData.currentStreet}
+                    onChange={handleChange}
+                    placeholder="Street Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="currentBarangay"
+                    value={formData.currentBarangay}
+                    onChange={handleChange}
+                    placeholder="Barangay"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="currentMunicipality"
+                    value={formData.currentMunicipality}
+                    onChange={handleChange}
+                    placeholder="Municipality/City"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="currentProvince"
+                    value={formData.currentProvince}
+                    onChange={handleChange}
+                    placeholder="Province"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="currentCountry"
+                    value={formData.currentCountry}
+                    onChange={handleChange}
+                    placeholder="Country"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="number"
+                    name="currentZipCode"
+                    value={formData.currentZipCode}
+                    onChange={handleChange}
+                    placeholder="Zip Code"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-medium text-gray-700">Permanent Address</h3>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="sameAsCurrentAddress"
+                    checked={formData.sameAsCurrentAddress}
+                    onChange={handleChange}
+                    className="mr-2 form-checkbox h-5 w-5 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">Same as Current Address</span>
+                </label>
+                {!formData.sameAsCurrentAddress && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="number"
+                      name="permanentHouseNo"
+                      value={formData.permanentHouseNo}
+                      onChange={handleChange}
+                      placeholder="House No."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      name="permanentStreet"
+                      value={formData.permanentStreet}
+                      onChange={handleChange}
+                      placeholder="Street Name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      name="permanentBarangay"
+                      value={formData.permanentBarangay}
+                      onChange={handleChange}
+                      placeholder="Barangay"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      name="permanentMunicipality"
+                      value={formData.permanentMunicipality}
+                      onChange={handleChange}
+                      placeholder="Municipality/City"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      name="permanentProvince"
+                      value={formData.permanentProvince}
+                      onChange={handleChange}
+                      placeholder="Province"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      name="permanentCountry"
+                      value={formData.permanentCountry}
+                      onChange={handleChange}
+                      placeholder="Country"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="number"
+                      name="permanentZipCode"
+                      value={formData.permanentZipCode}
+                      onChange={handleChange}
+                      placeholder="Zip Code"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Parent's/Guardian's Information */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Parent's/Guardian's Information</h2>
-        <div className="space-y-2">
-          <h3 className="font-medium">Father's Name</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <input
-              type="text"
-              name="fatherLastName"
-              value={formData.fatherLastName}
-              onChange={handleChange}
-              placeholder="Last Name"
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="fatherFirstName"
-              value={formData.fatherFirstName}
-              onChange={handleChange}
-              placeholder="First Name"
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="fatherMiddleName"
-              value={formData.fatherMiddleName}
-              onChange={handleChange}
-              placeholder="Middle Name"
-              className="border p-2 rounded"
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-medium">Mother's Maiden Name</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <input
-              type="text"
-              name="motherLastName"
-              value={formData.motherLastName}
-              onChange={handleChange}
-              placeholder="Last Name"
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="motherFirstName"
-              value={formData.motherFirstName}
-              onChange={handleChange}
-              placeholder="First Name"
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="motherMiddleName"
-              value={formData.motherMiddleName}
-              onChange={handleChange}
-              placeholder="Middle Name"
-              className="border p-2 rounded"
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-medium">Legal Guardian's Name</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <input
-              type="text"
-              name="guardianLastName"
-              value={formData.guardianLastName}
-              onChange={handleChange}
-              placeholder="Last Name"
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="guardianFirstName"
-              value={formData.guardianFirstName}
-              onChange={handleChange}
-              placeholder="First Name"
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="guardianMiddleName"
-              value={formData.guardianMiddleName}
-              onChange={handleChange}
-              placeholder="Middle Name"
-              className="border p-2 rounded"
-            />
-          </div>
-        </div>
-      </div>
+            {/* Parent's/Guardian's Information */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-800">Parent's/Guardian's Information</h2>
+              <div className="space-y-2">
+                <h3 className="font-medium text-gray-700">Father's Name</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input
+                    type="text"
+                    name="fatherLastName"
+                    value={formData.fatherLastName}
+                    onChange={handleChange}
+                    placeholder="Last Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="fatherFirstName"
+                    value={formData.fatherFirstName}
+                    onChange={handleChange}
+                    placeholder="First Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="fatherMiddleName"
+                    value={formData.fatherMiddleName}
+                    onChange={handleChange}
+                    placeholder="Middle Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-medium text-gray-700">Mother's Maiden Name</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input
+                    type="text"
+                    name="motherLastName"
+                    value={formData.motherLastName}
+                    onChange={handleChange}
+                    placeholder="Last Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="motherFirstName"
+                    value={formData.motherFirstName}
+                    onChange={handleChange}
+                    placeholder="First Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="motherMiddleName"
+                    value={formData.motherMiddleName}
+                    onChange={handleChange}
+                    placeholder="Middle Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-medium text-gray-700">Legal Guardian's Name</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input
+                    type="text"
+                    name="guardianLastName"
+                    value={formData.guardianLastName}
+                    onChange={handleChange}
+                    placeholder="Last Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="guardianFirstName"
+                    value={formData.guardianFirstName}
+                    onChange={handleChange}
+                    placeholder="First Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    name="guardianMiddleName"
+                    value={formData.guardianMiddleName}
+                    onChange={handleChange}
+                    placeholder="Middle Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
 
-      <div className="flex justify-between">
-        <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
-          Submit Enrollment Form
-        </button>
-        <label className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 cursor-pointer">
-          Upload CSV File
-          <input type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" />
-        </label>
-      </div>
-    </form>
-    {/* Student List */}
-    <div className="w-1/2 p-6 space-y-8">
-        <StudentList />
+            <div className="flex flex-col sm:flex-row justify-between space-y-4 sm:space-y-0 sm:space-x-4">
+              <button
+                type="submit"
+                className="w-full sm:w-auto bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-300"
+              >
+                Submit Enrollment Form
+              </button>
+              <label className="w-full sm:w-auto bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-300 cursor-pointer text-center">
+                Upload CSV File
+                <input type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      {/* Student List */}
+      <div className="w-full lg:w-1/2">
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="bg-gray-600 text-white py-4 px-6">
+            <h2 className="text-2xl text-center font-bold">Student List</h2>
+          </div>
+          <div className="p-6">
+            <StudentList />
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+

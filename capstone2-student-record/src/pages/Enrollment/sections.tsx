@@ -42,7 +42,59 @@ export default function SectionList() {
   const [showStudentList, setShowStudentList] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
   const [students, setStudents] = useState<Student[]>([]); 
+  const [showSecondSemStudents, setShowSecondSemStudents] = useState(false);
+  const [secondSemStudents, setSecondSemStudents] = useState<{ studentId: string; studentName: string; generalAverage: number }[]>([]);
+  const [selectedSectionName, setSelectedSectionName] = useState<string | null>(null);
+  const [selectedGradeLevel, setSelectedGradeLevel] = useState<string | null>(null);
+  const [_adviserId, setAdviserId] = useState<string | null>(null);
+  const [adviserName, setAdviserName] = useState<string | null>(null);
+  const [selectedSecondSemStudents, setSelectedSecondSemStudents] = useState<{ studentId: string; studentName: string }[]>([]);
+  const [selectedStrand, setSelectedStrand] = useState<string | null>(null);
+
   
+
+  const handleSecondSemEnrollment = async (sectionId: string) => {
+    try {
+      const gradesQuery = query(
+        collection(db, "grades"),
+        where("sectionId", "==", sectionId),
+        where("semester", "==", "1st")
+      );
+      const gradesSnapshot = await getDocs(gradesQuery);
+  
+      if (gradesSnapshot.empty) {
+        alert("No data found for this section.");
+        return;
+      }
+  
+      const sectionDetails = gradesSnapshot.docs[0].data();
+      setSelectedSectionName(sectionDetails.sectionName || "N/A");
+      setSelectedGradeLevel(sectionDetails.gradeLevel || "N/A");
+      setSelectedStrand(sectionDetails.strand || "N/A");
+      setAdviserId(sectionDetails.adviserId || null);
+      setAdviserName(sectionDetails.adviserName || null);
+  
+      // Map students and ensure `studentId` is included
+      const students = gradesSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          studentName: data.studentName,
+          generalAverage: data.generalAverage,
+          studentId: doc.id, // Ensure this is included
+        };
+      });
+  
+      setSecondSemStudents(students);
+      setShowSecondSemStudents(true);
+    } catch (error) {
+      console.error("Error fetching 2nd Sem Enrollment data:", error);
+      alert("An error occurred while fetching the student list. Please try again.");
+    }
+  };
+  
+  
+
+
   const coreSubjectsForGrades7to10 = [
     "Filipino",
     "English",
@@ -164,6 +216,72 @@ export default function SectionList() {
   ]
 
 
+  const handleStudentSelection = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    student: { studentId: string; studentName: string; generalAverage: number }
+  ) => {
+    const { checked } = e.target;
+  
+    setSelectedSecondSemStudents((prev) =>
+      checked
+        ? [...prev, { studentId: student.studentId, studentName: student.studentName }]
+        : prev.filter((s) => s.studentId !== student.studentId)
+    );
+  };
+  
+  
+  
+
+
+
+  const handleEnroll = async () => {
+    if (!selectedSectionName || !selectedGradeLevel) {
+      alert("Section name and grade level are required.");
+      return;
+    }
+  
+    if (selectedSecondSemStudents.length === 0) {
+      alert("Please select at least one student.");
+      return;
+    }
+  
+    try {
+      // Extract only the student IDs
+      const studentIds = selectedSecondSemStudents.map((student) => student.studentId);
+  
+      // Reference to the new section
+      const newSectionRef = collection(db, "sections");
+  
+      // Prepare the new section data
+      const newSectionData = {
+        name: `${selectedSectionName} - 2nd Sem`, // Append 2nd Sem to the section name
+        grade: selectedGradeLevel,
+        adviser: adviserName || "N/A",
+        students: studentIds, // Save only student IDs
+        semester: "2nd", // Mark it as 2nd Semester
+        strand: selectedStrand,
+        createdAt: new Date(), // Optional: Add a timestamp
+      };
+  
+      // Add the new section document to Firestore
+      const newSectionDoc = await addDoc(newSectionRef, newSectionData);
+  
+      console.log("New section created with ID:", newSectionDoc.id);
+  
+      // Close modal and reset state
+      setShowSecondSemStudents(false);
+      setSelectedSecondSemStudents([]);
+      alert("New section created successfully!");
+    } catch (error) {
+      console.error("Error creating new section:", error);
+      alert("An error occurred while creating the new section. Please try again.");
+    }
+  };
+  
+  
+  
+  
+  
   useEffect(() => {
     const fetchAllStudents = async () => {
       try {
@@ -306,7 +424,6 @@ export default function SectionList() {
   };
   
   
-
   
   const fetchSections = async () => {
     const querySnapshot = await getDocs(collection(db, 'sections'));
@@ -499,71 +616,97 @@ export default function SectionList() {
 
   return (
     <div className="container mx-auto p-4">
-      <h2 className="text-3xl font-semibold text-gray-800 mb-4 text-center">List of Sections</h2>
-      {sections.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto border-separate border-spacing-0">
-            <thead>
-              <tr className="bg-gray-100 text-left text-sm text-gray-600">
-                <th className="px-4 py-2 border-b">Section Name</th>
-                <th className="px-4 py-2 border-b">Number of Students</th>
-                <th className="px-4 py-2 border-b">Adviser</th>
-                <th className="px-4 py-2 border-b">Grade Level</th>
-                <th className="px-4 py-2 border-b">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-            {sections.map((section, index) => (
-              <tr key={section.id} className={`${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
-                <td className="px-4 py-2 border-b text-sm text-gray-700">{section.name}</td>
-                <td
-  className="px-4 py-2 border-b text-sm text-gray-700 cursor-pointer underline text-blue-600"
-  onClick={() => handleShowStudents(section.students)} // Pass section.grade as sectionGrade
->
-  {section.students.length}
-</td>
+<h2 className="text-3xl font-semibold text-gray-800 mb-4 text-center">
+  List of Sections
+</h2>
+{sections.length > 0 ? (
+  <div className="overflow-x-auto">
+    <table className="min-w-full table-auto border-separate border-spacing-0">
+      <thead>
+        <tr className="bg-gray-100 text-left text-sm text-gray-600">
+          <th className="px-4 py-2 border-b">Section Name</th>
+          <th className="px-4 py-2 border-b">Number of Students</th>
+          <th className="px-4 py-2 border-b">Adviser</th>
+          <th className="px-4 py-2 border-b">Grade Level</th>
+          <th className="px-4 py-2 border-b">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {sections
+          .slice() // Clone the array to avoid mutating the original state
+          .sort((a, b) => {
+            // Convert grade to numbers for proper numeric sorting
+            const gradeA = parseInt(a.grade || "0", 10);
+            const gradeB = parseInt(b.grade || "0", 10);
+            return gradeA - gradeB;
+          })
+          .map((section, index) => (
+            <tr
+              key={section.id}
+              className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
+            >
+              <td className="px-4 py-2 border-b text-sm text-gray-700">
+                {section.name}
+              </td>
+              <td
+                className="px-4 py-2 border-b text-sm text-gray-700 cursor-pointer underline text-blue-600"
+                onClick={() => handleShowStudents(section.students)}
+              >
+                {section.students.length}
+              </td>
+              <td className="px-4 py-2 border-b text-sm text-gray-700">
+                {section.adviser || "Not assigned"}
+              </td>
+              <td className="px-4 py-2 border-b text-sm text-gray-700">
+                {section.grade || "Not specified"}
+              </td>
+              <td className="px-4 py-2 border-b text-sm">
+                <div className="flex flex-col space-y-2">
+                  <button
+                    onClick={() => {
+                      setSelectedSectionId(section.id);
+                      setShowAssignAdviser(true);
+                      setShowAddSubjects(false);
+                    }}
+                    className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
+                  >
+                    Assign Adviser
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedSectionId(section.id);
+                      setShowAddSubjects(true);
+                      setShowAssignAdviser(false);
+                    }}
+                    className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
+                  >
+                    Assign Subject
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSection(section.id)}
+                    className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
+                  >
+                    Delete
+                  </button>
+                  {["11", "12"].includes(section.grade || "") && (
+                    <button
+                      onClick={() => handleSecondSemEnrollment(section.id)}
+                      className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
+                    >
+                      2nd Sem Enrollment
+                    </button>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+      </tbody>
+    </table>
+  </div>
+) : (
+  <p className="text-center text-gray-600">No sections found.</p>
+)}
 
-                <td className="px-4 py-2 border-b text-sm text-gray-700">{section.adviser || 'Not assigned'}</td>
-                <td className="px-4 py-2 border-b text-sm text-gray-700">{section.grade || 'Not specified'}</td>
-                <td className="px-4onClick={() => handleShowStudentsonClick={() => handleShowStudents py-2 border-b text-sm text-gray-700">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => {
-                        setSelectedSectionId(section.id);
-                        setShowAssignAdviser(true);
-                        setShowAddSubjects(false);
-                      }}
-                      className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition-colors"
-                    >
-                      Assign Adviser
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedSectionId(section.id);
-                        setShowAddSubjects(true);
-                        setShowAssignAdviser(false);
-                      }}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600 transition-colors"
-                    >
-                      Assign Subject
-                    </button>
-                    <button
-                      onClick={() => handleDeleteSection(section.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600 transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className="text-center text-gray-600">No sections found.</p>
-      )}
 
 {showStudentList && (
   <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
@@ -588,6 +731,54 @@ export default function SectionList() {
   </div>
 )}
 
+{showSecondSemStudents && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-gray-900 text-gray-100 p-6 rounded-lg max-w-md w-full">
+      {/* Display Section Name and Grade Level */}
+      <h2 className="text-lg font-bold mb-2">
+        Grade {selectedGradeLevel || "N/A"} {selectedStrand || "N/A"} - {selectedSectionName || "N/A"}
+      </h2>
+     
+      <h3 className="text-sm text-gray-400 mb-4">2nd Sem Enrollment Students</h3>
+
+      <ul className="space-y-2">
+        {secondSemStudents.length > 0 ? (
+          secondSemStudents.map((student, index) => (
+            <li key={index} className="flex justify-between items-center">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  value={student.studentName}
+                  onChange={(e) => handleStudentSelection(e, student)}
+                  className="form-checkbox text-blue-600"
+                />
+                <span>{student.studentName}</span>
+              </label>
+              <span className="text-gray-400">{student.generalAverage.toFixed(2)}%</span>
+            </li>
+          ))
+        ) : (
+          <p className="text-gray-400">No students found for 2nd Semester.</p>
+        )}
+      </ul>
+
+      <div className="mt-4 flex justify-between">
+        <button
+          onClick={() => setShowSecondSemStudents(false)}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        >
+          Close
+        </button>
+        <button
+          onClick={handleEnroll}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Enroll
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
 
       {showCreateSubject && (
@@ -719,4 +910,4 @@ export default function SectionList() {
       )}
     </div>
   );
-}
+} 
