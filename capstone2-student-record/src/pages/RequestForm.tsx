@@ -116,6 +116,18 @@ const RequestForm: React.FC = () => {
     return true;
   };
 
+  const handleGradeLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedGradeLevel = e.target.value;
+    setGradeLevel(selectedGradeLevel);
+  
+    // Hide Strand/Track for Grade 7-10
+    if (['7', '8', '9', '10'].includes(selectedGradeLevel)) {
+      setStrand(''); // Reset strand
+      setTrack(''); // Reset track
+      setTvlSubOption(''); // Reset TVL options
+    }
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -329,23 +341,44 @@ const RequestForm: React.FC = () => {
                   required
                 />
               </div>
-
-              <div className="mb-4">
-                <label htmlFor="strand" className="text-white">Strand</label>
+              {['11', '12'].includes(gradeLevel) && (
+              <>
+              
+            <div className="mb-4">
+              <label htmlFor="strand" className="text-white">Strand</label>
                 <select
                   id="strand"
                   value={strand}
                   onChange={handleStrandChange}
                   className="w-full p-2 mt-2 border rounded bg-gray-700 text-white"
                 >
-                  <option value="">-- Select Strand or Track--</option>
-                  <option value="ABM">Accountancy, Business, and Management (ABM)</option>
-                  <option value="GAS">General Academic Strand (GAS)</option>
-                  <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
-                  <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option>
-                  <option value="TVL">Technical Vocational Livelihood</option>
-                </select>
-              </div>
+                <option value="">-- Select Strand or Track --</option>
+                <option value="ABM">Accountancy, Business, and Management (ABM)</option>
+                <option value="GAS">General Academic Strand (GAS)</option>
+                <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
+                <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option>
+                <option value="TVL">Technical Vocational Livelihood</option>
+              </select>
+          </div>
+
+          {showTVLSubOptions && (
+              <div className="mb-4">
+                <label htmlFor="tvlSubOption" className="text-white">TVL Sub-Option</label>
+                     <select
+                        id="tvlSubOption"
+                        value={tvlSubOption}
+                        onChange={(e) => setTvlSubOption(e.target.value)}
+                        className="w-full p-2 mt-2 border rounded bg-gray-700 text-white"
+                       >
+                       <option value="">-- Select TVL Sub-Option --</option>
+                       <option value="CSS">Computer Systems Servicing (CSS)</option>
+                       <option value="Cookery">Cookery</option>
+                       </select>
+                       </div>
+                      )}
+                     </>
+                    )}
+
 
               {showTVLSubOptions && (
                 <div className="mb-4">
@@ -386,25 +419,24 @@ const RequestForm: React.FC = () => {
                 </div>
               )}
 
-              {(depedForm === 'Form 138' || depedForm === 'Certificate of Enrollment') && (
-                <div className="mb-4">
-                  <label htmlFor="gradeLevel" className="text-white">Grade Level</label>
-                  <select
-                    id="gradeLevel"
-                    value={gradeLevel}
-                    onChange={(e) => setGradeLevel(e.target.value)}
-                    className="w-full p-2 mt-2 border rounded bg-gray-700 text-white"
-                  >
-                    <option value="">-- Select Grade Level --</option>
-                    <option value="7">Grade 7</option>
-                    <option value="8">Grade 8</option>
-                    <option value="9">Grade 9</option>
-                    <option value="10">Grade 10</option>
-                    <option value="11">Grade 11</option>
-                    <option value="12">Grade 12</option>
-                  </select>
-                </div>
-              )}
+<div className="mb-4">
+  <label htmlFor="gradeLevel" className="text-white">Grade Level</label>
+  <select
+    id="gradeLevel"
+    value={gradeLevel}
+    onChange={handleGradeLevelChange} // Use the updated change handler
+    className="w-full p-2 mt-2 border rounded bg-gray-700 text-white"
+  >
+    <option value="">-- Select Grade Level --</option>
+    <option value="7">Grade 7</option>
+    <option value="8">Grade 8</option>
+    <option value="9">Grade 9</option>
+    <option value="10">Grade 10</option>
+    <option value="11">Grade 11</option>
+    <option value="12">Grade 12</option>
+  </select>
+</div>
+
 
               <button type="submit" className="w-full bg-blue-500 p-2 text-white rounded hover:bg-blue-600 transition">
                 Submit Request

@@ -101,6 +101,7 @@ export default function EnrollmentForm() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<FormData>>({});
+  
 
   const fetchUserRole = async (userId: string) => {
     const userDocRef = doc(db, "users", userId);
@@ -244,14 +245,7 @@ export default function EnrollmentForm() {
     }
   };
 
-  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // TODO: Implement CSV parsing and form population logic
-      console.log('CSV file selected:', file.name);
-      alert('CSV upload functionality not implemented yet.');
-    }
-  };
+
 
   return (
     <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6 p-6 bg-gray-100 min-h-screen">
@@ -718,10 +712,6 @@ export default function EnrollmentForm() {
               >
                 Submit Enrollment Form
               </button>
-              <label className="w-full sm:w-auto bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-300 cursor-pointer text-center">
-                Upload CSV File
-                <input type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" />
-              </label>
             </div>
           </div>
         </div>

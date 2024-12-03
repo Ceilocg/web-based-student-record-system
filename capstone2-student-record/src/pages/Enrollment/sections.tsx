@@ -50,7 +50,6 @@ export default function SectionList() {
   const [adviserName, setAdviserName] = useState<string | null>(null);
   const [selectedSecondSemStudents, setSelectedSecondSemStudents] = useState<{ studentId: string; studentName: string }[]>([]);
   const [selectedStrand, setSelectedStrand] = useState<string | null>(null);
-
   
 
   const handleSecondSemEnrollment = async (sectionId: string) => {

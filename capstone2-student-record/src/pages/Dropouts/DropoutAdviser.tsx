@@ -3,14 +3,16 @@ import { doc, getDoc, collection, query, where, getDocs, addDoc } from 'firebase
 import { auth, db } from '../../firebaseConfig'
 
 interface Student {
-  id: string
-  fullName: string
-  lrn: string
-  sex: string
-  age: number
-  birthdate: string
-  status: string
+  id: string;
+  fullName: string;
+  lrn: string;
+  sex: string;
+  age: number;
+  birthdate: string;
+  status: string;
+  hasSecondSemesterGrade: boolean; // Add this property
 }
+
 
 interface Section {
   name: string
@@ -26,9 +28,9 @@ export default function Component() {
   const [showDropoutReasons, setShowDropoutReasons] = useState(false)
   const [selectedDropoutReason, setSelectedDropoutReason] = useState<string | null>(null)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
-  const [studentsWithGrades, setStudentsWithGrades] = useState<Set<string>>(new Set());
+  const [, setStudentsWithGrades] = useState<Set<string>>(new Set());
 
-
+  
   const dropoutReasons = [
    "Poverty",
 "Child labor",
@@ -68,80 +70,143 @@ export default function Component() {
   useEffect(() => {
     const fetchSectionsForAdviser = async () => {
       try {
-        setLoading(true)
-        setError(null)
-
-        const user = auth.currentUser
+        setLoading(true);
+        setError(null);
+  
+        const user = auth.currentUser;
         if (user) {
-          const userDocRef = doc(db, 'users', user.uid)
-          const userDocSnap = await getDoc(userDocRef)
-
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+  
           if (userDocSnap.exists()) {
-            const userData = userDocSnap.data()
-            const fullname = userData?.fullname
-            const role = userData?.role
-
+            const userData = userDocSnap.data();
+            const fullname = userData?.fullname;
+            const role = userData?.role;
+  
             if (role === 'Adviser') {
-              const sectionsRef = collection(db, 'sections')
-              const sectionsQuery = query(sectionsRef, where('adviser', '==', fullname))
-              const sectionsSnapshot = await getDocs(sectionsQuery)
-
+              const sectionsRef = collection(db, 'sections');
+              let sectionsQuery = query(
+                sectionsRef,
+                where('adviser', '==', fullname),
+                where('semester', '==', '2nd') // First, try to fetch sections for the 2nd semester
+              );
+  
+              let sectionsSnapshot = await getDocs(sectionsQuery);
+  
+              // If no sections are found for the 2nd semester, fetch all sections
+              if (sectionsSnapshot.empty) {
+                sectionsQuery = query(
+                  sectionsRef,
+                  where('adviser', '==', fullname) // Fetch all sections for the adviser
+                );
+                sectionsSnapshot = await getDocs(sectionsQuery);
+              }
+  
               const fetchedSections = sectionsSnapshot.docs.map((doc) => ({
+                id: doc.id,
                 name: doc.data().name,
                 adviser: doc.data().adviser,
                 grade: doc.data().grade,
-                students: doc.data().students || [],
-              }))
-
+                students: doc.data().students || [], // Array of IDs (studentId or gradesId)
+              }));
+  
               const enrichedSections = await Promise.all(
                 fetchedSections.map(async (section) => {
                   const studentDocs = await Promise.all(
-                    section.students.map(async (studentId: string) => {
-                      const studentDoc = await getDoc(doc(db, 'enrollmentForms', studentId))
-                      if (studentDoc.exists()) {
-                        const studentData = studentDoc.data()
-                        return {
-                          id: studentDoc.id,
-                          fullName: `${studentData.firstName} ${studentData.middleName || ''} ${
-                            studentData.lastName
-                          }`.trim(),
-                          lrn: studentData.lrn,
-                          sex: studentData.sex,
-                          age: studentData.age,
-                          birthdate: studentData.birthdate,
-                          status: studentData.status || 'Enrolled', // Default to 'Enrolled' if status is not set
+                    section.students.map(async (id: string) => {
+                      try {
+                        let studentData = null;
+                       
+  
+                        // Attempt to fetch as a grade ID
+                        const gradeDocRef = doc(db, 'grades', id);
+                        const gradeDocSnap = await getDoc(gradeDocRef);
+  
+                        if (gradeDocSnap.exists()) {
+                          const gradeData = gradeDocSnap.data();
+  
+                          // Fetch enrollment form to get student details
+                          const enrollmentDocRef = doc(db, 'enrollmentForms', gradeData.studentId);
+                          const enrollmentDocSnap = await getDoc(enrollmentDocRef);
+  
+                          if (enrollmentDocSnap.exists()) {
+                            const enrollmentData = enrollmentDocSnap.data();
+                            studentData = {
+                              id: gradeData.studentId,
+                              fullName: `${enrollmentData.firstName} ${enrollmentData.middleName || ''} ${
+                                enrollmentData.lastName
+                              }`.trim(),
+                              lrn: enrollmentData.lrn || '-',
+                              sex: enrollmentData.sex,
+                              age: enrollmentData.age,
+                              birthdate: enrollmentData.birthdate,
+                              status: enrollmentData.status || 'Enrolled',
+                              hasSecondSemesterGrade: gradeData.semester === '2nd',
+                              generalAverage: gradeData.generalAverage || null,
+                            };
+                          }
+                        } else {
+                          // If not found as a grade ID, fetch as a student ID
+                          const studentDocRef = doc(db, 'enrollmentForms', id);
+                          const studentDocSnap = await getDoc(studentDocRef);
+  
+                          if (studentDocSnap.exists()) {
+                            const enrollmentData = studentDocSnap.data();
+                            studentData = {
+                              id,
+                              fullName: `${enrollmentData.firstName} ${enrollmentData.middleName || ''} ${
+                                enrollmentData.lastName
+                              }`.trim(),
+                              lrn: enrollmentData.lrn || '-',
+                              sex: enrollmentData.sex,
+                              age: enrollmentData.age,
+                              birthdate: enrollmentData.birthdate,
+                              status: enrollmentData.status || 'Enrolled',
+                              hasSecondSemesterGrade: false,
+                              generalAverage: null,
+                            };
+                          }
                         }
+  
+                        return studentData;
+                      } catch (error) {
+                        console.error(`Error fetching data for ID: ${id}`, error);
+                        return null;
                       }
-                      return null
                     })
-                  )
+                  );
+  
                   return {
                     ...section,
-                    students: studentDocs.filter((s) => s !== null) as Student[],
-                  }
+                    students: studentDocs.filter((s) => s !== null) as Student[], // Filter out nulls
+                  };
                 })
-              )
-
-              setSections(enrichedSections)
+              );
+  
+              setSections(enrichedSections);
             } else {
-              setError('You do not have permission to view this page.')
+              setError('You do not have permission to view this page.');
             }
           } else {
-            setError('User data not found in the database.')
+            setError('User data not found in the database.');
           }
         } else {
-          setError('No user is logged in.')
+          setError('No user is logged in.');
         }
       } catch (err) {
-        console.error('Error fetching data:', err)
-        setError('An error occurred while fetching sections.')
+        console.error('Error fetching data:', err);
+        setError('An error occurred while fetching sections.');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-
-    fetchSectionsForAdviser()
-  }, [])
+    };
+  
+    fetchSectionsForAdviser();
+  }, []);
+  
+  
+  
+  
 
   const handleDropoutClick = (student: Student) => {
     setSelectedStudent(student)
@@ -238,32 +303,32 @@ export default function Component() {
                   </tr>
                 </thead>
                 <tbody>
-                  {section.students.map((student) => (
-                    <tr key={student.id} className="text-gray-600">
-                      <td className="px-4 py-2 border">{student.fullName}</td>
-                      <td className="px-4 py-2 border">{student.lrn}</td>
-                      <td className="px-4 py-2 border">{student.sex}</td>
-                      <td className="px-4 py-2 border">{student.age}</td>
-                      <td className="px-4 py-2 border">{student.birthdate}</td>
-                      <td className="px-4 py-2 border text-center">
-  {studentsWithGrades.has(student.id) ? (
-    <span className="text-gray-400">Action Not Available</span>
-  ) : (
-    <button
-      className={`hover:underline ${
-        student.status === 'Dropout' ? 'text-red-500' : 'text-blue-500'
-      }`}
-      onClick={() => handleDropoutClick(student)}
-      disabled={student.status === 'Dropout'}
-    >
-      {student.status === 'Dropout' ? 'Dropped Out' : 'Dropout'}
-    </button>
-  )}
-</td>
+  {section.students.map((student) => (
+    <tr key={student.id} className="text-gray-600">
+      <td className="px-4 py-2 border">{student.fullName}</td>
+      <td className="px-4 py-2 border">{student.lrn}</td>
+      <td className="px-4 py-2 border">{student.sex}</td>
+      <td className="px-4 py-2 border">{student.age}</td>
+      <td className="px-4 py-2 border">{student.birthdate}</td>
+      <td className="px-4 py-2 border text-center">
+        {student.hasSecondSemesterGrade ? (
+          <span className="text-gray-400">Action Not Available</span>
+        ) : (
+          <button
+            className={`hover:underline ${
+              student.status === 'Dropout' ? 'text-red-500' : 'text-blue-500'
+            }`}
+            onClick={() => handleDropoutClick(student)}
+            disabled={student.status === 'Dropout'}
+          >
+            {student.status === 'Dropout' ? 'Dropped Out' : 'Dropout'}
+          </button>
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
 
-                    </tr>
-                  ))}
-                </tbody>
               </table>
             </div>
           </div>
