@@ -4,8 +4,8 @@ import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import { submitFormRequest } from './requestHandler'; // Import Firestore submission handler
-import { Timestamp } from 'firebase/firestore'; // For Firestore's timestamp
+import { submitFormRequest } from './requestHandler';
+import { Timestamp } from 'firebase/firestore';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -14,21 +14,21 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props,
 const RequestForm: React.FC = () => {
   const [depedForm, setDepedForm] = useState('');
   const [firstName, setFirstName] = useState('');
-  const [middleInitial, setMiddleInitial] = useState(''); // New field for Middle Initial
+  const [middleInitial, setMiddleInitial] = useState('');
   const [lastName, setLastName] = useState('');
-  const [suffix, setSuffix] = useState(''); // New field for Suffix
-  const [lrn, setLrn] = useState(''); // LRN as string to handle precision issues
-  const [contactNumber, setContactNumber] = useState(''); // Contact number as string to handle precision issues
+  const [suffix, setSuffix] = useState('');
+  const [lrn, setLrn] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
   const [email, setEmail] = useState('');
   const [strand, setStrand] = useState('');
   const [yearGraduated, setYearGraduated] = useState('');
-  const [gradeLevel, setGradeLevel] = useState(''); // New state for grade level
+  const [gradeLevel, setGradeLevel] = useState('');
   const [track, setTrack] = useState('');
-  const [tvlSubOption, setTvlSubOption] = useState(''); // Add state for TVL sub-options
-  const [showTVLSubOptions, setShowTVLSubOptions] = useState(false); // Control TVL options visibility
-  const [error, setError] = useState(''); // Error state for validation messages
-  const [openSnackbar, setOpenSnackbar] = useState(false); // Control snackbar visibility
-  const [greeting, setGreeting] = useState(''); // State for greeting message
+  const [tvlSubOption, setTvlSubOption] = useState('');
+  const [showTVLSubOptions, setShowTVLSubOptions] = useState(false);
+  const [error, setError] = useState('');
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [greeting, setGreeting] = useState('');
   const navigate = useNavigate();
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -39,22 +39,21 @@ const RequestForm: React.FC = () => {
   const resetForm = () => {
     setDepedForm('');
     setFirstName('');
-    setMiddleInitial(''); // Reset middle initial
+    setMiddleInitial('');
     setLastName('');
-    setSuffix(''); // Reset suffix
+    setSuffix('');
     setLrn('');
     setContactNumber('');
     setEmail('');
     setStrand('');
     setYearGraduated('');
     setTrack('');
-    setTvlSubOption(''); // Reset TVL sub-option
-    setGradeLevel(''); // Reset grade level
-    setGreeting(''); // Reset greeting message
+    setTvlSubOption('');
+    setGradeLevel('');
+    setGreeting('');
   };
 
   const validateForm = () => {
-    // Validate if all required fields are filled
     if (!depedForm) {
       setError('Please select a request certificate.');
       setOpenSnackbar(true);
@@ -85,9 +84,26 @@ const RequestForm: React.FC = () => {
       return false;
     }
 
-    // Validate Strand and Sub-options (if necessary)
-    if (!strand) {
-      setError('Please select a strand.');
+    if (depedForm === 'Diploma' && !strand) {
+      setError('Please select a strand for Diploma.');
+      setOpenSnackbar(true);
+      return false;
+    }
+
+    if (depedForm === 'Good Moral' && gradeLevel !== '10' && gradeLevel !== '12') {
+      setError('For Good Moral, please select either Grade 10 or Grade 12.');
+      setOpenSnackbar(true);
+      return false;
+    }
+
+    if (depedForm === 'Good Moral' && gradeLevel === '12' && !strand) {
+      setError('Please select a strand for Grade 12 Good Moral.');
+      setOpenSnackbar(true);
+      return false;
+    }
+
+    if (depedForm !== 'Diploma' && depedForm !== 'Good Moral' && !gradeLevel) {
+      setError('Please select a grade level.');
       setOpenSnackbar(true);
       return false;
     }
@@ -98,19 +114,10 @@ const RequestForm: React.FC = () => {
       return false;
     }
 
-    // Validate Year Graduated or Grade Level based on depedForm selection
-    if (depedForm !== 'Form 138' && depedForm !== 'Certificate of Enrollment') {
-      if (!yearGraduated) {
-        setError('Please select the school year you graduated.');
-        setOpenSnackbar(true);
-        return false;
-      }
-    } else {
-      if (!gradeLevel) {
-        setError('Please select a grade level.');
-        setOpenSnackbar(true);
-        return false;
-      }
+    if (depedForm !== 'Form 138' && depedForm !== 'Certificate of Enrollment' && depedForm !== 'Good Moral' && !yearGraduated) {
+      setError('Please select the school year you graduated.');
+      setOpenSnackbar(true);
+      return false;
     }
 
     return true;
@@ -120,47 +127,43 @@ const RequestForm: React.FC = () => {
     const selectedGradeLevel = e.target.value;
     setGradeLevel(selectedGradeLevel);
   
-    // Hide Strand/Track for Grade 7-10
-    if (['7', '8', '9', '10'].includes(selectedGradeLevel)) {
-      setStrand(''); // Reset strand
-      setTrack(''); // Reset track
-      setTvlSubOption(''); // Reset TVL options
+    if (['7', '8', '9', '10'].includes(selectedGradeLevel) || (depedForm === 'Good Moral' && selectedGradeLevel === '10')) {
+      setStrand('');
+      setTrack('');
+      setTvlSubOption('');
     }
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form before proceeding
     const isValid = validateForm();
-    if (!isValid) return; // Stop if validation fails
+    if (!isValid) return;
 
-    // Create formData object conditionally based on visible fields
     const formData: any = {
       depedForm,
       firstName,
-      middleInitial, // Include middle initial (even if blank)
+      middleInitial,
       lastName,
-      suffix, // Include suffix (even if blank)
+      suffix,
       lrn,
       contactNumber,
       email,
-      strand,
-      timestamp: Timestamp.now(), // Use Firestore Timestamp for consistency
+      timestamp: Timestamp.now(),
     };
 
-    // Conditionally add yearGraduated or gradeLevel based on depedForm
-    if (depedForm !== 'Form 138' && depedForm !== 'Certificate of Enrollment') {
-      if (yearGraduated) {
-        formData.yearGraduated = yearGraduated; // Include yearGraduated if applicable
-      }
-    } else {
-      if (gradeLevel) {
-        formData.gradeLevel = gradeLevel; // Include gradeLevel if applicable
-      }
+    if (depedForm === 'Diploma' || (depedForm === 'Good Moral' && gradeLevel === '12') || (depedForm !== 'Good Moral' && !['7', '8', '9', '10'].includes(gradeLevel))) {
+      formData.strand = strand;
     }
 
-    // Add track and tvlSubOption if they are selected
+    if (depedForm !== 'Diploma') {
+      formData.gradeLevel = gradeLevel;
+    }
+
+    if (depedForm !== 'Form 138' && depedForm !== 'Certificate of Enrollment' && depedForm !== 'Good Moral') {
+      formData.yearGraduated = yearGraduated;
+    }
+
     if (track) {
       formData.track = track;
     }
@@ -168,15 +171,15 @@ const RequestForm: React.FC = () => {
       formData.tvlSubOption = tvlSubOption;
     }
 
-    // Submit the form data
-    await submitFormRequest(formData, resetForm, setError, setOpenSnackbar);
-
-    // Clear the error and close the Snackbar after successful submission
-    setError('');
-    setOpenSnackbar(false);
-
-    // Set the greeting message upon successful submission
-    setGreeting(`Thank you, ${firstName} ${lastName}! Your request for ${depedForm} has been submitted successfully.`);
+    try {
+      await submitFormRequest(formData, resetForm, setError, setOpenSnackbar);
+      setError('');
+      setOpenSnackbar(false);
+      setGreeting(`Thank you, ${firstName} ${lastName}! Your request for ${depedForm} has been submitted successfully.`);
+    } catch (error) {
+      setError('An error occurred while submitting the form. Please try again.');
+      console.error(error);
+    }
   };
 
   const handleCloseSnackbar = () => {
@@ -186,11 +189,9 @@ const RequestForm: React.FC = () => {
   const handleStrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedStrand = e.target.value;
     setStrand(selectedStrand);
-    if (selectedStrand === 'TVL') {
-      setShowTVLSubOptions(true); // Show TVL sub-options when "TVL" is selected
-    } else {
-      setShowTVLSubOptions(false);
-      setTvlSubOption(''); // Reset TVL sub-options when another strand is selected
+    setShowTVLSubOptions(selectedStrand === 'TVL');
+    if (selectedStrand !== 'TVL') {
+      setTvlSubOption('');
     }
   };
 
@@ -223,7 +224,6 @@ const RequestForm: React.FC = () => {
           <ArrowBackIcon />
         </IconButton>
 
-        {/* Display the greeting message at the top */}
         {greeting && (
           <div className="mb-4 text-white text-center">
             {greeting}
@@ -273,7 +273,7 @@ const RequestForm: React.FC = () => {
                   onChange={(e) => setMiddleInitial(e.target.value)}
                   className="w-full p-2 mt-2 border rounded bg-gray-700 text-white"
                   placeholder="e.g., F."
-                  maxLength={2} // Limit to 2 characters
+                  maxLength={2}
                 />
               </div>
 
@@ -341,44 +341,25 @@ const RequestForm: React.FC = () => {
                   required
                 />
               </div>
-              {['11', '12'].includes(gradeLevel) && (
-              <>
-              
-            <div className="mb-4">
-              <label htmlFor="strand" className="text-white">Strand</label>
-                <select
-                  id="strand"
-                  value={strand}
-                  onChange={handleStrandChange}
-                  className="w-full p-2 mt-2 border rounded bg-gray-700 text-white"
-                >
-                <option value="">-- Select Strand or Track --</option>
-                <option value="ABM">Accountancy, Business, and Management (ABM)</option>
-                <option value="GAS">General Academic Strand (GAS)</option>
-                <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
-                <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option>
-                <option value="TVL">Technical Vocational Livelihood</option>
-              </select>
-          </div>
 
-          {showTVLSubOptions && (
-              <div className="mb-4">
-                <label htmlFor="tvlSubOption" className="text-white">TVL Sub-Option</label>
-                     <select
-                        id="tvlSubOption"
-                        value={tvlSubOption}
-                        onChange={(e) => setTvlSubOption(e.target.value)}
-                        className="w-full p-2 mt-2 border rounded bg-gray-700 text-white"
-                       >
-                       <option value="">-- Select TVL Sub-Option --</option>
-                       <option value="CSS">Computer Systems Servicing (CSS)</option>
-                       <option value="Cookery">Cookery</option>
-                       </select>
-                       </div>
-                      )}
-                     </>
-                    )}
-
+              {(depedForm === 'Diploma' || (depedForm === 'Good Moral' && gradeLevel === '12') || (depedForm !== 'Good Moral' && !['7', '8', '9', '10'].includes(gradeLevel))) && (
+                <div className="mb-4">
+                  <label htmlFor="strand" className="text-white">Strand</label>
+                  <select
+                    id="strand"
+                    value={strand}
+                    onChange={handleStrandChange}
+                    className="w-full p-2 mt-2 border rounded bg-gray-700 text-white"
+                  >
+                    <option value="">-- Select Strand or Track --</option>
+                    <option value="ABM">Accountancy, Business, and Management (ABM)</option>
+                    <option value="GAS">General Academic Strand (GAS)</option>
+                    <option value="HUMSS">Humanities and Social Sciences (HUMSS)</option>
+                    <option value="STEM">Science, Technology, Engineering, and Mathematics (STEM)</option>
+                    <option value="TVL">Technical Vocational Livelihood</option>
+                  </select>
+                </div>
+              )}
 
               {showTVLSubOptions && (
                 <div className="mb-4">
@@ -396,8 +377,7 @@ const RequestForm: React.FC = () => {
                 </div>
               )}
 
-              {/* Conditionally render School Year Graduated or Grade Level based on depedForm */}
-              {(depedForm !== 'Form 138' && depedForm !== 'Certificate of Enrollment') && (
+              {(depedForm !== 'Form 138' && depedForm !== 'Certificate of Enrollment' && depedForm !== 'Good Moral') && (
                 <div className="mb-4">
                   <label htmlFor="yearGraduated" className="text-white">School Year Graduated</label>
                   <select
@@ -419,24 +399,34 @@ const RequestForm: React.FC = () => {
                 </div>
               )}
 
-<div className="mb-4">
-  <label htmlFor="gradeLevel" className="text-white">Grade Level</label>
-  <select
-    id="gradeLevel"
-    value={gradeLevel}
-    onChange={handleGradeLevelChange} // Use the updated change handler
-    className="w-full p-2 mt-2 border rounded bg-gray-700 text-white"
-  >
-    <option value="">-- Select Grade Level --</option>
-    <option value="7">Grade 7</option>
-    <option value="8">Grade 8</option>
-    <option value="9">Grade 9</option>
-    <option value="10">Grade 10</option>
-    <option value="11">Grade 11</option>
-    <option value="12">Grade 12</option>
-  </select>
-</div>
-
+              {depedForm !== 'Diploma' && (
+                <div className="mb-4">
+                  <label htmlFor="gradeLevel" className="text-white">Grade Level</label>
+                  <select
+                    id="gradeLevel"
+                    value={gradeLevel}
+                    onChange={handleGradeLevelChange}
+                    className="w-full p-2 mt-2 border rounded bg-gray-700 text-white"
+                  >
+                    <option value="">-- Select Grade Level --</option>
+                    {depedForm === 'Good Moral' ? (
+                      <>
+                        <option value="10">Grade 10</option>
+                        <option value="12">Grade 12</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="7">Grade 7</option>
+                        <option value="8">Grade 8</option>
+                        <option value="9">Grade 9</option>
+                        <option value="10">Grade 10</option>
+                        <option value="11">Grade 11</option>
+                        <option value="12">Grade 12</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+              )}
 
               <button type="submit" className="w-full bg-blue-500 p-2 text-white rounded hover:bg-blue-600 transition">
                 Submit Request
@@ -445,10 +435,9 @@ const RequestForm: React.FC = () => {
           )}
         </form>
 
-        {/* Snackbar for error handling */}
         <Snackbar
           open={openSnackbar}
-          autoHideDuration={6000} // Snackbar will automatically hide after 6 seconds
+          autoHideDuration={6000}
           onClose={handleCloseSnackbar}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
@@ -462,3 +451,4 @@ const RequestForm: React.FC = () => {
 };
 
 export default RequestForm;
+
