@@ -3,14 +3,12 @@ import { initializeApp, cert } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import cors from 'cors';
-import path from 'path';
+import * as path from 'path';
 
-// Import Firebase Admin SDK credentials
-const serviceAccount = require(path.resolve(__dirname, '../serviceAccountKey.json'));
-
-// Initialize Firebase Admin SDK
+// Initialize Firebase Admin SDK using the JSON file directly
+const serviceAccountPath = path.join(__dirname, '../serviceAccountKey.json');
 initializeApp({
-  credential: cert(serviceAccount),
+  credential: cert(serviceAccountPath),
   storageBucket: 'capstone-2-5c8e9.appspot.com',
 });
 
@@ -82,7 +80,6 @@ app.post('/generate-pdf', async (req: Request, res: Response): Promise<void> => 
     handleError(res, error, 'Failed to generate and save the PDF.');
   }
 });
-
 
 // GET /generate-signed-url - Generate a signed URL for a file
 app.get('/generate-signed-url', async (req: Request, res: Response) => {
