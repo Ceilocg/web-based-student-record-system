@@ -24,7 +24,7 @@ interface Request {
 
 const fetchSignedUrl = async (fileName: string) => {
   try {
-    const response = await axios.get('http://localhost:5000/generate-signed-url', {
+    const response = await axios.get('https://backend-q0jpghqts-ceilocgs-projects.vercel.app/generate-signed-url', {
       params: { fileName },
     });
 
@@ -38,6 +38,7 @@ const fetchSignedUrl = async (fileName: string) => {
     alert('An error occurred while fetching the download link.');
   }
 };
+
 
 
 // Format the timestamp
@@ -142,7 +143,8 @@ const Notifications: React.FC = () => {
         date: getFormattedDate(),
       };
   
-      const response = await axios.post('http://localhost:5000/generate-pdf', payload);
+      const response = await axios.post('https://backend-q0jpghqts-ceilocgs-projects.vercel.app/generate-pdf', payload);
+
   
       if (response.data.fileName) {
         console.log('Certificate generated:', response.data.fileName);
