@@ -12,6 +12,7 @@ interface Section {
   subjects?: string[]
   strand?: string
   tvlSubOption?: string
+  semester?:string
 }
 
 interface Adviser {
@@ -425,18 +426,20 @@ export default function SectionList() {
   
   
   const fetchSections = async () => {
-    const querySnapshot = await getDocs(collection(db, 'sections'));
-    const sectionsData: Section[] = querySnapshot.docs.map(doc => ({
+    const querySnapshot = await getDocs(collection(db, "sections"));
+    const sectionsData: Section[] = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       name: doc.data().name,
       students: doc.data().students || [],
-      adviser: doc.data().adviser || '',
-      grade: doc.data().grade || '', // Fetch gradeLevel here
-      strand: doc.data().strand || '',
-      tvlSubOption: doc.data().tvlSubOption || ''
+      adviser: doc.data().adviser || "",
+      grade: doc.data().grade || "", // Fetch gradeLevel here
+      strand: doc.data().strand || "",
+      tvlSubOption: doc.data().tvlSubOption || "",
+      semester: doc.data().semester || "1st", // Add the semester field (default to "1st")
     }));
     setSections(sectionsData);
-  }
+  };
+  
 
   const handleSelectAll = () => {
     if (selectedSubjects.length === availableSubjects.length) {
@@ -631,75 +634,86 @@ export default function SectionList() {
         </tr>
       </thead>
       <tbody>
-        {sections
-          .slice() // Clone the array to avoid mutating the original state
-          .sort((a, b) => {
-            // Convert grade to numbers for proper numeric sorting
-            const gradeA = parseInt(a.grade || "0", 10);
-            const gradeB = parseInt(b.grade || "0", 10);
-            return gradeA - gradeB;
-          })
-          .map((section, index) => (
-            <tr
-              key={section.id}
-              className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
+  {sections
+    .slice() // Clone the array to avoid mutating the original state
+    .sort((a, b) => {
+      // Convert grade to numbers for proper numeric sorting
+      const gradeA = parseInt(a.grade || "0", 10);
+      const gradeB = parseInt(b.grade || "0", 10);
+      return gradeA - gradeB;
+    })
+    .map((section, index) => (
+      <tr
+        key={section.id}
+        className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
+      >
+        <td className="px-4 py-2 border-b text-sm text-gray-700">
+          {section.name}
+        </td>
+        <td className="px-4 py-2 border-b text-sm text-gray-700">
+          {section.semester === "2nd" ? (
+            <span className="text-gray-500">To Be Updated</span>
+          ) : (
+            <span
+              className="cursor-pointer underline text-blue-600"
+              onClick={() => handleShowStudents(section.students)}
             >
-              <td className="px-4 py-2 border-b text-sm text-gray-700">
-                {section.name}
-              </td>
-              <td
-                className="px-4 py-2 border-b text-sm text-gray-700 cursor-pointer underline text-blue-600"
-                onClick={() => handleShowStudents(section.students)}
-              >
-                {section.students.length}
-              </td>
-              <td className="px-4 py-2 border-b text-sm text-gray-700">
-                {section.adviser || "Not assigned"}
-              </td>
-              <td className="px-4 py-2 border-b text-sm text-gray-700">
-                {section.grade || "Not specified"}
-              </td>
-              <td className="px-4 py-2 border-b text-sm">
-                <div className="flex flex-col space-y-2">
+              {section.students.length}
+            </span>
+          )}
+        </td>
+        <td className="px-4 py-2 border-b text-sm text-gray-700">
+          {section.adviser || "Not assigned"}
+        </td>
+        <td className="px-4 py-2 border-b text-sm text-gray-700">
+          {section.grade || "Not specified"}
+        </td>
+        <td className="px-4 py-2 border-b text-sm">
+          <div className="flex flex-col space-y-2">
+            <button
+              onClick={() => {
+                setSelectedSectionId(section.id);
+                setShowAssignAdviser(true);
+                setShowAddSubjects(false);
+              }}
+              className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
+            >
+              Assign Adviser
+            </button>
+            <button
+              onClick={() => {
+                setSelectedSectionId(section.id);
+                setShowAddSubjects(true);
+                setShowAssignAdviser(false);
+              }}
+              className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
+            >
+              Assign Subject
+            </button>
+            {section.semester !== "2nd" && (
+              <>
+                <button
+                  onClick={() => handleDeleteSection(section.id)}
+                  className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
+                >
+                  Delete
+                </button>
+                {["11", "12"].includes(section.grade || "") && (
                   <button
-                    onClick={() => {
-                      setSelectedSectionId(section.id);
-                      setShowAssignAdviser(true);
-                      setShowAddSubjects(false);
-                    }}
+                    onClick={() => handleSecondSemEnrollment(section.id)}
                     className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
                   >
-                    Assign Adviser
+                    2nd Sem Enrollment
                   </button>
-                  <button
-                    onClick={() => {
-                      setSelectedSectionId(section.id);
-                      setShowAddSubjects(true);
-                      setShowAssignAdviser(false);
-                    }}
-                    className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
-                  >
-                    Assign Subject
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSection(section.id)}
-                    className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
-                  >
-                    Delete
-                  </button>
-                  {["11", "12"].includes(section.grade || "") && (
-                    <button
-                      onClick={() => handleSecondSemEnrollment(section.id)}
-                      className="bg-gray-800 text-gray-200 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors"
-                    >
-                      2nd Sem Enrollment
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-      </tbody>
+                )}
+              </>
+            )}
+          </div>
+        </td>
+      </tr>
+    ))}
+</tbody>
+
     </table>
   </div>
 ) : (

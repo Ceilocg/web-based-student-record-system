@@ -490,15 +490,30 @@ export default function GradeAdviser() {
       setTimeout(() => setErrorMessage(null), 3000);
       return;
     }
-
+  
     const section = sections.find((s) => s.id === selectedSectionId);
     if (!section) {
       setErrorMessage("Section not found.");
       setTimeout(() => setErrorMessage(null), 3000);
       return;
     }
-
+  
     try {
+      // Check student's status in enrollmentForms
+      const studentDoc = await getDoc(doc(db, "enrollmentForms", selectedStudent.id));
+      if (!studentDoc.exists()) {
+        setErrorMessage("Student record not found.");
+        setTimeout(() => setErrorMessage(null), 3000);
+        return;
+      }
+  
+      const studentData = studentDoc.data();
+      if (studentData.status === "Dropout") {
+        setErrorMessage("This student is already marked as a Dropout.");
+        setTimeout(() => setErrorMessage(null), 3000);
+        return;
+      }
+  
       let gradesQuery;
       if (isGrade11or12(section.grade)) {
         gradesQuery = query(
@@ -514,8 +529,9 @@ export default function GradeAdviser() {
           where("sectionId", "==", selectedSectionId)
         );
       }
+  
       const existingGradesSnapshot = await getDocs(gradesQuery);
-
+  
       if (!existingGradesSnapshot.empty) {
         setErrorMessage(
           isGrade11or12(section.grade)
@@ -525,9 +541,9 @@ export default function GradeAdviser() {
         setTimeout(() => setErrorMessage(null), 3000);
         return;
       }
-
+  
       const generalAverage = calculateGeneralAverage();
-
+  
       const learningAreasData: LearningArea[] = learningAreas.map((area) => ({
         name: area,
         quarters: isGrade11or12(section.grade)
@@ -547,7 +563,7 @@ export default function GradeAdviser() {
           ? calculateFinalGrade([grades[area]?.[0] || 0, grades[area]?.[1] || 0]) || 0
           : calculateFinalGrade(grades[area] || []) || 0,
       }));
-
+  
       const gradeData: GradeData = {
         studentId: selectedStudent.id,
         studentName: selectedStudent.fullName,
@@ -556,19 +572,19 @@ export default function GradeAdviser() {
         sectionId: selectedSectionId,
         sectionName: section.name,
         gradeLevel: section.grade,
-        strand:section.strand,
+        strand: section.strand,
         schoolYear: new Date().getFullYear().toString(),
         learningAreas: learningAreasData,
         generalAverage: generalAverage === "-" ? 0 : Number(generalAverage),
         timestamp: serverTimestamp(),
         ...(isGrade11or12(section.grade) && { semester: selectedSemester }),
       };
-
+  
       await addDoc(collection(db, "grades"), gradeData);
-
+  
       setSuccessMessage("Grades saved successfully!");
       setTimeout(() => setSuccessMessage(null), 3000);
-
+  
       // Reset state after saving
       setGrades({});
       setSelectedStudent(null);
@@ -580,6 +596,7 @@ export default function GradeAdviser() {
       setTimeout(() => setErrorMessage(null), 3000);
     }
   };
+  
 
   useEffect(() => {
     fetchSectionsForAdviser()
