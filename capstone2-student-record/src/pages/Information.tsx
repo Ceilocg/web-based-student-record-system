@@ -208,17 +208,9 @@ const Information: React.FC = () => {
                         </div>
                         <div className="flex items-center">
                             <label className="w-28 text-gray-500 font-medium">Email:</label>
-                            {!isEditing ? (
-                                <span className="ml-2 text-gray-800">{userData.email}</span>
-                            ) : (
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="ml-2 w-full px-3 py-2 rounded-md border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                />
-                            )}
+                            <span className="ml-2 text-gray-800">{userData.email}</span>
                         </div>
+
                         {isEditing && (
                             <>
                                 <div className="flex items-center">
