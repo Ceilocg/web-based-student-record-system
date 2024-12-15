@@ -24,9 +24,10 @@ interface Request {
 
 const fetchSignedUrl = async (fileName: string) => {
   try {
-    const response = await axios.get('https://backend-q0jpghqts-ceilocgs-projects.vercel.app/generate-signed-url', {
-      params: { fileName },
-    });
+    const response = await axios.get(
+      'https://backend-qczuqh09q-ceilocgs-projects.vercel.app/generate-signed-url', // Vercel URL
+      { params: { fileName } }
+    );
 
     if (response.data.url) {
       window.open(response.data.url, '_blank'); // Open in a new tab
@@ -135,7 +136,12 @@ const Notifications: React.FC = () => {
 
   const generateCertificate = async (request: Request) => {
     try {
-      const fullName = `${request.firstName} ${request.middleInitial || ''} ${request.lastName}`;
+      const middleInitial =
+        request.middleInitial && request.middleInitial.toUpperCase() !== 'N/A'
+          ? request.middleInitial
+          : '';
+  
+      const fullName = `${request.firstName} ${middleInitial} ${request.lastName}`;
       const payload = {
         fullName: fullName.trim(),
         gradeLevel: request.gradeLevel || '',
@@ -143,8 +149,10 @@ const Notifications: React.FC = () => {
         date: getFormattedDate(),
       };
   
-      const response = await axios.post('https://backend-q0jpghqts-ceilocgs-projects.vercel.app/generate-pdf', payload);
-
+      const response = await axios.post(
+        'https://backend-qczuqh09q-ceilocgs-projects.vercel.app/generate-pdf', // Vercel URL
+        payload
+      );
   
       if (response.data.fileName) {
         console.log('Certificate generated:', response.data.fileName);
@@ -159,7 +167,10 @@ const Notifications: React.FC = () => {
         console.error('Failed to generate certificate: No fileName returned.');
       }
     } catch (error: any) {
-      console.error('Error generating certificate:', error.response?.data || error.message || error);
+      console.error(
+        'Error generating certificate:',
+        error.response?.data || error.message || error
+      );
       alert('An error occurred while generating the certificate. Please try again.');
     }
   };
