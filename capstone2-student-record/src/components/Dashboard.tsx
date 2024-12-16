@@ -83,7 +83,8 @@ const Dashboard: React.FC = () => {
         //Fetch Graduates 
         const graduatesQuery = query(
           collection(db, "grades"),
-          where("semester", "==", "2nd")
+          where("semester", "==", "2nd"),
+          where("gradeLevel", "==", "12")
         );
         const graduatesSnapshot = await getDocs(graduatesQuery);
         setGraduates2025(graduatesSnapshot.size); 
@@ -454,47 +455,47 @@ const dropoutChartOptions: ChartOptions<'bar'> = {
       const enrollmentCounts: Record<
         string,
         { enrollments: number; dropouts: number; juniorHigh: number; seniorHigh: number }
-      > = { ...sampleData };
-  
+      > = { ...sampleData }; // Initialize with your sample data
+    
       try {
         const querySnapshot = await getDocs(collection(db, "enrollmentForms"));
         querySnapshot.forEach((doc) => {
           const schoolYear: string = doc.data().schoolYear;
-          const startYear = schoolYear.split("-")[0];
+          const startYear = schoolYear.split("-")[0]; // Extract the start year (e.g., "2024" from "2024-2025")
           const gradeLevel = doc.data().gradeLevel;
           const status = doc.data().status;
-  
+    
           // Initialize counts for the year if not already present
           if (!enrollmentCounts[startYear]) {
             enrollmentCounts[startYear] = { enrollments: 0, dropouts: 0, juniorHigh: 0, seniorHigh: 0 };
           }
-  
+    
           // Count dropouts
           if (status === "Dropout") {
             enrollmentCounts[startYear].dropouts += 1;
           } else {
             // Count non-dropout enrollments
             enrollmentCounts[startYear].enrollments += 1;
-  
+    
             // Count junior high students
             if (["7", "8", "9", "10"].includes(gradeLevel)) {
               enrollmentCounts[startYear].juniorHigh += 1;
             }
-  
+    
             // Count senior high students
             if (["11", "12"].includes(gradeLevel)) {
               enrollmentCounts[startYear].seniorHigh += 1;
             }
           }
         });
-  
-        // Prepare chart data
+    
+        // Prepare chart data dynamically, including 2024
         const labels = Object.keys(enrollmentCounts).sort();
         const enrollments = labels.map((year) => enrollmentCounts[year].enrollments);
         const dropouts = labels.map((year) => enrollmentCounts[year].dropouts);
         const juniorHigh = labels.map((year) => enrollmentCounts[year].juniorHigh);
         const seniorHigh = labels.map((year) => enrollmentCounts[year].seniorHigh);
-  
+    
         setChartData({ labels, enrollments, dropouts, juniorHigh, seniorHigh });
       } catch (error) {
         console.error("Error fetching enrollment data: ", error);
