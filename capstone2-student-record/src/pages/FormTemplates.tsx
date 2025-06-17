@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ref, getDownloadURL, uploadBytesResumable, listAll } from "firebase/storage";
-import { storage, db } from "../firebaseConfig";
+import { storage, db } from "../firebase/firebaseConfig";
 import { setDoc, doc, getDoc } from "firebase/firestore";
 import { TextField, Button, Card, CardHeader, CardContent, Typography, IconButton } from "@mui/material";
 import { Download,UploadCloud, Search } from "lucide-react";

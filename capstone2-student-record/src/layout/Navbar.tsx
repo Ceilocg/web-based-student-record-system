@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaBars, FaUserCircle, FaBell } from 'react-icons/fa';
-import { auth, db } from '../firebaseConfig';
+import { auth, db } from '../firebase/firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';

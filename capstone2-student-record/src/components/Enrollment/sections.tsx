@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { collection,getDoc,addDoc, getDocs, doc, deleteDoc, updateDoc, query, where} from 'firebase/firestore'
-import { db } from '../../firebaseConfig'
+import { db } from '../../firebase/firebaseConfig'
 import { Loader2 } from 'lucide-react'
 
 interface Section {

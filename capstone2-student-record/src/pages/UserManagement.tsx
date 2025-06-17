@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebaseConfig';
+import { db } from '../firebase/firebaseConfig';
 import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { 
@@ -7,7 +7,7 @@ import {
     onAuthStateChanged, 
     updatePassword
 } from 'firebase/auth';
-import { storage } from '../firebaseConfig';
+import { storage } from '../firebase/firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { UserCircle2, UserCog, Eye, EyeOff, Moon, Sun } from 'lucide-react';
 import { FaChalkboardTeacher } from 'react-icons/fa'; 

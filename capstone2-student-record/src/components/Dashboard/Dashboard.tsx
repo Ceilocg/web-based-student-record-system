@@ -3,9 +3,9 @@ import React, { useState, useEffect } from "react";
 import { Line, Bar } from 'react-chartjs-2';
 import { ChartOptions, TooltipItem } from "chart.js";
 import { UserCircle2, Users, BookOpen, BarChart3, Moon, Sun } from 'lucide-react';
-import { db } from "../firebaseConfig";
-import DoughnutChart from './pie';
-import { dropoutReasons } from "../reasons";
+import { db } from "../firebase/firebaseConfig";
+import DoughnutChart from './Pie-Chart';
+import { dropoutReasons } from "../types/reasons";
 import {
   coreSubjectsForGrades7to10,
   coreSubjectsForGrades11to12,
@@ -16,7 +16,7 @@ import {
   heSubjectsForGrades11to12,
   cssSubjectsForGrades11to12,
   cookerySubjectsForGrades11to12,
-} from "../subjects";
+} from "../types/subjects";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -65,9 +65,6 @@ const Dashboard: React.FC = () => {
   const [subjects, setSubjects] = useState<{ name: string; averageGrade: number }[]>([]);
   const [completers2025, setCompleters2025] = useState(0);
   const [graduates2025, setGraduates2025] = useState(0);
-
-
-
 
   useEffect(() => {
     const fetchData = async () => {

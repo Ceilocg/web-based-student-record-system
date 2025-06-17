@@ -1,45 +1,45 @@
 import React, { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
-import AdminDropout from "./AdminDropout"; 
-import Component from "./DropoutAdviser"
+import { db } from "../../firebase/firebaseConfig"; // Consistent Firebase import
+import GradeAdmin from "./GradeAdmin";
+import GradeAdviser from "./GradeAdviser";
 
-
-const Dropouts: React.FC = () => {
+const Grades: React.FC = () => {
   const [role, setRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Handles local loading state
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserRole = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
 
-      if (user) {
-        try {
+        if (user) {
           const userDocRef = doc(db, "users", user.uid);
           const userDocSnap = await getDoc(userDocRef);
 
           if (userDocSnap.exists()) {
             setRole(userDocSnap.data()?.role || null);
           } else {
-            setError("User data not found.");
+            throw new Error("User data not found.");
           }
-        } catch (err) {
-          console.error("Error fetching user role:", err);
-          setError("An error occurred while fetching user data.");
+        } else {
+          throw new Error("No user is logged in.");
         }
-      } else {
-        setError("No user is logged in.");
+      } catch (err: any) {
+        console.error("Error fetching user role:", err.message);
+        setError(err.message || "An error occurred while fetching user data.");
+      } finally {
+        setLoading(false); // Ensure loading stops after fetching
       }
-
-      setLoading(false);
     };
 
     fetchUserRole();
   }, []);
 
+  // Render loading spinner exclusively
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900">
@@ -60,16 +60,24 @@ const Dropouts: React.FC = () => {
     );
   }
 
+  // Render fallback if no role is assigned
   if (!role) {
-    return <div className="text-gray-500 text-center">No role assigned.</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <div className="text-gray-500 text-lg font-medium">
+          No role assigned. Please contact the administrator.
+        </div>
+      </div>
+    );
   }
 
+  // Render specific components based on the role
   return (
     <div className="">
-      {role === "Admin" && <AdminDropout />}
-      {role === "Adviser" && <Component />}
+      {role === "Admin" && <GradeAdmin />}
+      {role === "Adviser" && <GradeAdviser />}
     </div>
   );
 };
 
-export default Dropouts;
+export default Grades;

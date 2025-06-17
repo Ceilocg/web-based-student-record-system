@@ -3,7 +3,7 @@ import { submitEnrollmentForm } from '../Enrollment/enrollmentHandler';
 import StudentList from './students';
 import { doc, getDoc } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { db } from "../../firebaseConfig";
+import { db } from "../../firebase/firebaseConfig";
 
 interface FormData {
   schoolYear: string;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore'
-import { db } from '../firebaseConfig'
+import { db } from '../firebase/firebaseConfig'
 import axios from 'axios'
 import { Download, FileCheck, FileText } from 'lucide-react'
 

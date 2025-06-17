@@ -1,5 +1,5 @@
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { db } from '../firebaseConfig'; // Adjust the import path based on your project structure
+import { db } from '../firebase/firebaseConfig'; // Adjust the import path based on your project structure
 
 // Type definition for formData
 interface FormData {

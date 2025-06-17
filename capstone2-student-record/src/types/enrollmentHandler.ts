@@ -1,5 +1,5 @@
 import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
+import { db } from '../../firebase/firebaseConfig';
 
 interface FormData {
     schoolYear: string;

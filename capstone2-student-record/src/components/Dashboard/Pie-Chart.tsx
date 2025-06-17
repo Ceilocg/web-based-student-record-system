@@ -2,12 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { collection, getDocs, query } from 'firebase/firestore';
-import { db } from '../firebaseConfig'; // Adjust the import based on your project setup
+import { db } from '../firebase/firebaseConfig'; // Adjust the import based on your project setup
 
-// Register necessary components for the Doughnut chart
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-// Define the type of your Firestore document
 interface EnrollmentForm {
   gradeLevel: string;
   status: string;

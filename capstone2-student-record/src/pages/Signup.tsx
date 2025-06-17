@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { auth } from '../firebaseConfig'; // Import your Firebase config
+import { auth } from '../firebase/firebaseConfig'; // Import your Firebase config
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,13 +11,13 @@ const Signup: React.FC = () => {
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError(''); // Clear previous errors
+        setError(''); 
 
         try {
             await createUserWithEmailAndPassword(auth, email, password); // Use Firebase Auth to register the user
-            navigate('/'); // Redirect to home after successful signup
+            navigate('/'); 
         } catch (err) {
-            setError('Failed to sign up. Please try again.'); // Set error message
+            setError('Failed to sign up. Please try again.'); 
         }
     };
 
@@ -32,7 +32,7 @@ const Signup: React.FC = () => {
                         <input
                             type="email"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)} // Update email state
+                            onChange={(e) => setEmail(e.target.value)} 
                             className="w-full p-2 rounded"
                             required
                         />
@@ -42,7 +42,7 @@ const Signup: React.FC = () => {
                         <input
                             type="password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)} // Update password state
+                            onChange={(e) => setPassword(e.target.value)} 
                             className="w-full p-2 rounded"
                             required
                         />
