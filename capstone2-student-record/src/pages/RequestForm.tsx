@@ -4,7 +4,7 @@ import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import { submitFormRequest } from './requestHandler';
+import { submitFormRequest } from '../types/requestHandler';
 import { Timestamp } from 'firebase/firestore';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {

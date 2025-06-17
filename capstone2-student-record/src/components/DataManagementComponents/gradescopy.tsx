@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db, auth } from '../../firebaseConfig';
+import { db, auth } from '../../firebase/firebaseConfig';
 
 interface Student {
   id: string;

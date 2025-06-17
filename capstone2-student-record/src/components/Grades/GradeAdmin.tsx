@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
+import { db } from "../../firebase/firebaseConfig";
 import LearningAreaTable from './LearningAreaTable';  // Adjust path if needed
 import { ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, updateDoc, doc, addDoc} from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
+import { db } from '../../firebase/firebaseConfig';
 import { FaUserGraduate } from 'react-icons/fa';
 import { FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';

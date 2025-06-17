@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom'; // Import Link for navigation
-import { auth, db } from '../../firebaseConfig';
+import { auth, db } from '../../firebase/firebaseConfig';
 
 interface Student {
   id: string;

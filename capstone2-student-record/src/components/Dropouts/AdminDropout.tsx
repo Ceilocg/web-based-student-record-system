@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore"
-import { db } from "../../firebaseConfig"
+import { db } from "../../firebase/firebaseConfig"
 
 interface DropoutRequest {
   id: string

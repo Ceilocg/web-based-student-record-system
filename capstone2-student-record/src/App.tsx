@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebaseConfig'; // Firebase import
-import Sidebar from './components/Sidebar';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import { auth, db } from './firebase/firebaseConfig'; // Firebase import
+import Sidebar from './layout/Sidebar';
+import Navbar from './layout/Navbar';
+import Footer from './layout/Footer';
 import Home from './pages/Home';
 import UserManagement from './pages/UserManagement';
 import AddUserPage from './pages/AddUser';
@@ -14,14 +14,14 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import RequestForm from './pages/RequestForm';
 import Notifications from './pages/Notifications';
-import Grades from './pages/Grades/Grades'
+import Grades from './components/Grades/Grades'
 import { AuthProvider } from './context/AuthContext';
 import AboutUs from './pages/AboutUs';
 import Information from './pages/Information';
-import SectionList from './pages/Enrollment/sections';
-import StudentGrades from './pages/DataManagementComponents/studentgrade';
-import EnrollmentForm from './pages/Enrollment/Enrollees';
-import Dropouts from './pages/Dropouts/Dropouts';
+import SectionList from './components/Enrollment/sections';
+import StudentGrades from './components/DataManagementComponents/studentgrade';
+import EnrollmentForm from './components/Enrollment/Enrollees';
+import Dropouts from './components/Dropouts/Dropouts';
 
 
 

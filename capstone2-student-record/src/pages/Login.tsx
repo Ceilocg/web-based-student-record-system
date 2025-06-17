@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { auth } from '../firebaseConfig'
+import { auth } from '../firebase/firebaseConfig'
 import { useNavigate } from 'react-router-dom'
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'
 import Snackbar from '@mui/material/Snackbar'

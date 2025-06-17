@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
-import { db, auth } from '../../firebaseConfig'
+import { db, auth } from '../../firebase/firebaseConfig'
 import { Search } from 'lucide-react'
 
 interface Student {
